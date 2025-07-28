@@ -40,6 +40,24 @@ if [ "$OS" == "macos" ]; then
     echo -e "\n${YELLOW}Running macOS setup...${NC}"
     ./install-macos.sh
 elif [ "$OS" == "arch" ]; then
+    # Check if this is a fresh Arch install
+    if ! command -v git &> /dev/null; then
+        echo -e "${RED}ERROR: Git is not installed!${NC}"
+        echo -e "${YELLOW}This appears to be a fresh Arch installation.${NC}"
+        echo -e "\nPlease run these commands first:"
+        echo -e "${GREEN}sudo pacman -Sy${NC}"
+        echo -e "${GREEN}sudo pacman -S git${NC}"
+        echo -e "\nThen clone the repository and run this installer again."
+        exit 1
+    fi
+    
+    # Check for base-devel
+    if ! pacman -Qi base-devel &> /dev/null; then
+        echo -e "\n${YELLOW}Installing essential build tools...${NC}"
+        echo -e "${GREEN}This is required for AUR packages and compilation${NC}"
+        sudo pacman -S --needed --noconfirm base-devel git wget curl
+    fi
+    
     echo -e "\n${YELLOW}Running Arch Linux setup...${NC}"
     ./install-arch.sh
 fi

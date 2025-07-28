@@ -2,6 +2,14 @@
 
 ## 🚀 Fastest Path to Working Arch + Dotfiles
 
+### Ultra Quick (1 command after WiFi)
+```bash
+# Just run this after connecting to WiFi:
+curl -sSL https://raw.githubusercontent.com/maxtechera/max-dotfiles/main/fresh-arch-setup.sh | bash
+```
+
+That's it! The script handles EVERYTHING from a fresh Arch install.
+
 ### Step 1: Boot Arch USB
 Boot from USB and select "Linux install medium 64"
 

@@ -16,12 +16,17 @@ echo -e "${BLUE}║     Arch Linux Environment Setup       ║${NC}"
 echo -e "${BLUE}║        Hyprland + Ghostty              ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
 
+# Install essential build tools FIRST
+echo -e "\n${YELLOW}[0/12] Installing essential build tools...${NC}"
+echo -e "${GREEN}This is required for a fresh Arch install${NC}"
+sudo pacman -S --needed --noconfirm base-devel git wget curl
+
 # Update system
-echo -e "\n${YELLOW}[1/11] Updating system...${NC}"
+echo -e "\n${YELLOW}[1/12] Updating system...${NC}"
 sudo pacman -Syu --noconfirm
 
 # Detect and install GPU drivers
-echo -e "\n${YELLOW}[2/11] Detecting GPU...${NC}"
+echo -e "\n${YELLOW}[2/12] Detecting GPU...${NC}"
 GPU_TYPE="unknown"
 if lspci | grep -i nvidia > /dev/null; then
     GPU_TYPE="nvidia"
@@ -44,7 +49,7 @@ elif lspci | grep -i intel | grep -i vga > /dev/null; then
 fi
 
 # Install yay (AUR helper)
-echo -e "\n${YELLOW}[3/11] Installing yay...${NC}"
+echo -e "\n${YELLOW}[3/12] Installing yay...${NC}"
 if ! command -v yay &> /dev/null; then
     git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin
     cd /tmp/yay-bin
@@ -54,10 +59,8 @@ if ! command -v yay &> /dev/null; then
 fi
 
 # Install base packages
-echo -e "\n${YELLOW}[4/11] Installing base packages...${NC}"
+echo -e "\n${YELLOW}[4/12] Installing base packages...${NC}"
 sudo pacman -S --needed --noconfirm \
-    base-devel \
-    git \
     neovim \
     neovim-remote \
     tmux \
@@ -102,7 +105,7 @@ done \
     glow
 
 # Install Hyprland and dependencies
-echo -e "\n${YELLOW}[5/11] Installing Hyprland...${NC}"
+echo -e "\n${YELLOW}[5/12] Installing Hyprland...${NC}"
 sudo pacman -S --needed --noconfirm \
     hyprland \
     xdg-desktop-portal-hyprland \
@@ -144,7 +147,7 @@ sudo pacman -S --needed --noconfirm \
     network-manager-applet
 
 # Install fonts
-echo -e "\n${YELLOW}[6/11] Installing fonts...${NC}"
+echo -e "\n${YELLOW}[6/12] Installing fonts...${NC}"
 sudo pacman -S --needed --noconfirm \
     ttf-jetbrains-mono-nerd \
     ttf-font-awesome \
@@ -158,7 +161,7 @@ sudo pacman -S --needed --noconfirm \
     ttf-ubuntu-font-family
 
 # Install Ghostty from AUR
-echo -e "\n${YELLOW}[7/11] Installing Ghostty...${NC}"
+echo -e "\n${YELLOW}[7/12] Installing Ghostty...${NC}"
 yay -S --needed --noconfirm ghostty-bin
 
 # Install AUR packages
@@ -175,7 +178,7 @@ yay -S --needed --noconfirm \
     1password-cli
 
 # Clone and setup dotfiles
-echo -e "\n${YELLOW}[8/11] Setting up dotfiles...${NC}"
+echo -e "\n${YELLOW}[8/12] Setting up dotfiles...${NC}"
 DOTFILES_DIR="$HOME/.dotfiles"
 
 # Backup existing configs
@@ -223,7 +226,7 @@ stow -v zsh
 stow -v git
 
 # Change default shell to zsh
-echo -e "\n${YELLOW}[9/11] Setting up shell...${NC}"
+echo -e "\n${YELLOW}[9/12] Setting up shell...${NC}"
 if [ "$SHELL" != "$(which zsh)" ]; then
     chsh -s $(which zsh)
 fi
@@ -296,7 +299,7 @@ if [ ! -f "$HOME/.ssh/id_ed25519" ] && [ ! -f "$HOME/.ssh/id_rsa" ]; then
 fi
 
 # Install SDDM display manager
-echo -e "\n${YELLOW}[10/11] Installing display manager...${NC}"
+echo -e "\n${YELLOW}[10/12] Installing display manager...${NC}"
 sudo pacman -S --needed --noconfirm sddm qt5-graphicaleffects qt5-quickcontrols2 qt5-svg
 yay -S --needed --noconfirm sddm-sugar-candy-git
 
@@ -318,7 +321,7 @@ Type=Application
 EOF
 
 # Configure system for better experience
-echo -e "\n${YELLOW}[11/11] Final system configuration...${NC}"
+echo -e "\n${YELLOW}[11/12] Final system configuration...${NC}"
 # Enable autologin (optional - comment out if you want login screen)
 # sudo mkdir -p /etc/sddm.conf.d
 # sudo tee /etc/sddm.conf.d/autologin.conf > /dev/null << EOF

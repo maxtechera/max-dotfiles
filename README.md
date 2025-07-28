@@ -6,6 +6,13 @@ A unified configuration that provides an identical command-line and window manag
 
 **From Arch USB → Working Desktop in ~30 minutes!**
 
+### Option A: One-Command Setup (Recommended)
+```bash
+# After installing base Arch and connecting to WiFi, just run:
+curl -sSL https://raw.githubusercontent.com/maxtechera/max-dotfiles/main/fresh-arch-setup.sh | bash
+```
+
+### Option B: Step-by-Step
 ```bash
 # 1. Boot Arch USB and connect WiFi
 iwctl  # or use ethernet
