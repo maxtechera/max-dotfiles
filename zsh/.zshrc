@@ -11,6 +11,7 @@ ZSH_THEME="robbyrussell"
 plugins=(
     git
     zsh-autosuggestions
+    zsh-syntax-highlighting
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -18,7 +19,8 @@ source $ZSH/oh-my-zsh.sh
 # User configuration
 
 # Aliases - matching macOS setup
-alias ls='ls -G'
+# Use GNU ls on Arch (different from macOS)
+alias ls='ls --color=auto'
 alias ll='ls -lh'
 alias la='ls -lAh'
 alias l='ls -lah'
@@ -26,8 +28,10 @@ alias lsa='ls -lah'
 alias md='mkdir -p'
 alias rd='rmdir'
 
-# Modern CLI tools (optional but recommended)
-alias cat='bat'
+# Modern CLI tools
+# Check if tools exist before aliasing
+command -v eza &> /dev/null && alias ls='eza --icons'
+command -v bat &> /dev/null && alias cat='bat'
 alias vim='nvim'
 alias vi='nvim'
 alias g='git'

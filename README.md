@@ -17,7 +17,20 @@ curl -sSL https://raw.githubusercontent.com/maxtechera/max-dotfiles/main/fresh-a
 - AUR packages compile from source, which is why they're slow
 - You can install them later individually
 
-### Option B: Step-by-Step
+### Option B: Modular Installation (NEW!)
+```bash
+# Clone the repo first
+git clone https://github.com/maxtechera/max-dotfiles.git
+cd max-dotfiles
+
+# Choose your installation type:
+./scripts/quick-install.sh minimal    # Just essentials (~5 min)
+./scripts/quick-install.sh desktop    # Desktop environment (~15 min)
+./scripts/quick-install.sh full       # Everything (~30 min)
+./install-arch-modular.sh            # Interactive module selection
+```
+
+### Option C: Traditional Step-by-Step
 ```bash
 # 1. Boot Arch USB and connect WiFi
 iwctl  # or use ethernet
@@ -189,6 +202,31 @@ The verification script checks:
 - Services are enabled
 - Configuration files are in place
 - Key binaries are available
+
+## 🎯 Installation Methods
+
+### 1. **Modular Installation** (Recommended for Control)
+The new modular installer splits the setup into 20 small, independent modules:
+- Each module can be run separately
+- Skip modules you don't need
+- Resume from where you left off
+- No more big Y/N prompts for unrelated packages
+
+```bash
+./install-arch-modular.sh  # Interactive menu
+```
+
+### 2. **Quick Profiles**
+Pre-configured installation profiles:
+- `minimal` - CLI tools only (5 min)
+- `desktop` - Hyprland desktop (15 min)
+- `full` - Everything including AUR (30 min)
+
+### 3. **Traditional All-in-One**
+The original installer that does everything at once:
+```bash
+./install-arch.sh
+```
 
 ## 🚨 Troubleshooting
 
