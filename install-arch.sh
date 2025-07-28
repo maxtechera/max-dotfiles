@@ -376,6 +376,37 @@ for dir in hypr waybar rofi ghostty nvim tmux zsh git; do
     fi
 done
 
+# Configure Hyprland to use Super key (Linux standard)
+echo -e "${YELLOW}Configuring Hyprland keybindings...${NC}"
+HYPR_CONFIG="$HOME/.config/hypr/hyprland.conf"
+HYPR_SUPER="$HOME/.config/hypr/hyprland-super.conf"
+HYPR_CURRENT="$HOME/.config/hypr/hyprland-current.conf"
+
+if [ -f "$HYPR_CONFIG" ] && ! grep -q "mainMod = SUPER" "$HYPR_CONFIG" 2>/dev/null; then
+    echo -e "${YELLOW}Current Hyprland config uses Alt (macOS-style) which conflicts with Linux apps${NC}"
+    read -p "Switch to Super key (Linux standard)? (y/n) [y]: " -n 1 -r REPLY
+    REPLY=${REPLY:-y}
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        # Backup original Alt config
+        if [ ! -L "$HYPR_CONFIG" ]; then
+            cp "$HYPR_CONFIG" "$HYPR_CONFIG.alt-backup"
+        fi
+        
+        # Use Super config
+        if [ -f "$HYPR_SUPER" ]; then
+            cp "$HYPR_SUPER" "$HYPR_CURRENT"
+            rm -f "$HYPR_CONFIG"
+            ln -s "hyprland-current.conf" "$HYPR_CONFIG"
+            echo -e "${GREEN}✓ Switched to Super key (recommended)${NC}"
+        else
+            echo -e "${YELLOW}! Super config not found, keeping Alt${NC}"
+        fi
+    fi
+elif [ -f "$HYPR_CONFIG" ]; then
+    echo -e "${GREEN}✓ Hyprland already using Super key${NC}"
+fi
+
 # Change default shell to zsh
 step "Setting up shell..."
 if [ "$SHELL" != "$(which zsh)" ]; then
