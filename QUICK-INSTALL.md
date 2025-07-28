@@ -18,15 +18,21 @@ exit
 ```
 
 ### Step 3: Download and Run Installer
+
+#### Option A: Automatic Installer (Fresh Disk)
 ```bash
-# Download the installer
-curl -O https://raw.githubusercontent.com/[your-username]/arch-dotfiles/main/arch-installer.sh
-
-# Make executable
+# For clean installation on empty disk
+curl -O https://raw.githubusercontent.com/maxtechera/max-dotfiles/main/arch-installer.sh
 chmod +x arch-installer.sh
-
-# Run it!
 ./arch-installer.sh
+```
+
+#### Option B: Flexible Installer (Existing Setup)
+```bash
+# For existing partitions, multi-disk, or resuming
+curl -O https://raw.githubusercontent.com/maxtechera/max-dotfiles/main/arch-installer-flexible.sh
+chmod +x arch-installer-flexible.sh
+./arch-installer-flexible.sh
 ```
 
 **The installer will:**
@@ -77,8 +83,10 @@ From USB boot to working desktop:
 # 1. Connect WiFi (if needed)
 iwctl
 
-# 2. Get installer
-curl -O https://raw.githubusercontent.com/[your-username]/arch-dotfiles/main/arch-installer.sh
+# 2. Get installer (choose one)
+curl -O https://raw.githubusercontent.com/maxtechera/max-dotfiles/main/arch-installer.sh
+# OR for flexible installer:
+curl -O https://raw.githubusercontent.com/maxtechera/max-dotfiles/main/arch-installer-flexible.sh
 chmod +x arch-installer.sh
 ./arch-installer.sh
 
