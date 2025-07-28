@@ -18,6 +18,17 @@ echo -e "${BLUE}║    Fresh Arch Linux Complete Setup        ║${NC}"
 echo -e "${BLUE}║         Zero to Desktop                   ║${NC}"
 echo -e "${BLUE}╚═══════════════════════════════════════════╝${NC}"
 
+# Request sudo upfront if we need it
+if ! command -v git &> /dev/null; then
+    echo -e "\n${YELLOW}This script needs sudo access to install Git. Please enter your password:${NC}"
+    sudo -v
+    # Keep sudo alive in the background
+    (while true; do sudo -n true; sleep 50; done 2>/dev/null) &
+    SUDO_PID=$!
+    # Cleanup on exit
+    trap "kill $SUDO_PID 2>/dev/null || true" EXIT
+fi
+
 # Step 1: Install git if not present
 echo -e "\n${PURPLE}[1/3]${NC} Checking Git..."
 if ! command -v git &> /dev/null; then

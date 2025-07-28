@@ -18,6 +18,20 @@ echo -e "${BLUE}║     Arch Linux Environment Setup       ║${NC}"
 echo -e "${BLUE}║        Hyprland + Ghostty              ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
 
+# Request sudo upfront and keep it alive
+echo -e "\n${YELLOW}This script needs sudo access. Please enter your password:${NC}"
+sudo -v
+
+# Keep sudo alive in the background
+(while true; do sudo -n true; sleep 50; done 2>/dev/null) &
+SUDO_PID=$!
+
+# Cleanup function to kill the sudo keepalive
+cleanup() {
+    kill $SUDO_PID 2>/dev/null || true
+}
+trap cleanup EXIT
+
 # Helper functions
 check_installed() {
     pacman -Qi "$1" &> /dev/null
@@ -140,13 +154,24 @@ BASE_PACKAGES=(
     zoxide direnv thefuck httpie glow
 )
 
+# Build list of packages to install
+PACKAGES_TO_INSTALL=()
 echo -e "${YELLOW}Checking base packages...${NC}"
 for pkg in "${BASE_PACKAGES[@]}"; do
     if ! check_installed "$pkg"; then
-        echo -e "  Installing $pkg..."
-        sudo pacman -S --needed --noconfirm "$pkg" 2>/dev/null || echo "  ! $pkg not available, skipping"
+        PACKAGES_TO_INSTALL+=("$pkg")
     fi
 done
+
+if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then
+    echo -e "${YELLOW}Installing ${#PACKAGES_TO_INSTALL[@]} base packages...${NC}"
+    sudo pacman -S --needed --noconfirm "${PACKAGES_TO_INSTALL[@]}" 2>/dev/null || {
+        echo -e "${YELLOW}Some packages failed, installing individually...${NC}"
+        for pkg in "${PACKAGES_TO_INSTALL[@]}"; do
+            sudo pacman -S --needed --noconfirm "$pkg" 2>/dev/null || echo "  ! $pkg not available"
+        done
+    }
+fi
 echo -e "${GREEN}✓ Base packages ready${NC}"
 
 # Install Hyprland and dependencies
@@ -162,13 +187,24 @@ HYPRLAND_PACKAGES=(
     network-manager-applet
 )
 
+# Build list of packages to install
+PACKAGES_TO_INSTALL=()
 echo -e "${YELLOW}Checking Hyprland packages...${NC}"
 for pkg in "${HYPRLAND_PACKAGES[@]}"; do
     if ! check_installed "$pkg"; then
-        echo -e "  Installing $pkg..."
-        sudo pacman -S --needed --noconfirm "$pkg" 2>/dev/null || echo "  ! $pkg not available"
+        PACKAGES_TO_INSTALL+=("$pkg")
     fi
 done
+
+if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then
+    echo -e "${YELLOW}Installing ${#PACKAGES_TO_INSTALL[@]} Hyprland packages...${NC}"
+    sudo pacman -S --needed --noconfirm "${PACKAGES_TO_INSTALL[@]}" 2>/dev/null || {
+        echo -e "${YELLOW}Some packages failed, installing individually...${NC}"
+        for pkg in "${PACKAGES_TO_INSTALL[@]}"; do
+            sudo pacman -S --needed --noconfirm "$pkg" 2>/dev/null || echo "  ! $pkg not available"
+        done
+    }
+fi
 echo -e "${GREEN}✓ Hyprland packages ready${NC}"
 
 # Install fonts
@@ -179,13 +215,24 @@ FONT_PACKAGES=(
     inter-font ttf-roboto ttf-ubuntu-font-family
 )
 
+# Build list of packages to install
+PACKAGES_TO_INSTALL=()
 echo -e "${YELLOW}Checking fonts...${NC}"
 for pkg in "${FONT_PACKAGES[@]}"; do
     if ! check_installed "$pkg"; then
-        echo -e "  Installing $pkg..."
-        sudo pacman -S --needed --noconfirm "$pkg" 2>/dev/null || echo "  ! $pkg not available"
+        PACKAGES_TO_INSTALL+=("$pkg")
     fi
 done
+
+if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then
+    echo -e "${YELLOW}Installing ${#PACKAGES_TO_INSTALL[@]} font packages...${NC}"
+    sudo pacman -S --needed --noconfirm "${PACKAGES_TO_INSTALL[@]}" 2>/dev/null || {
+        echo -e "${YELLOW}Some packages failed, installing individually...${NC}"
+        for pkg in "${PACKAGES_TO_INSTALL[@]}"; do
+            sudo pacman -S --needed --noconfirm "$pkg" 2>/dev/null || echo "  ! $pkg not available"
+        done
+    }
+fi
 echo -e "${GREEN}✓ Fonts ready${NC}"
 
 # Install Ghostty from AUR
