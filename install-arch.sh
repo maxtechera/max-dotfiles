@@ -180,7 +180,7 @@ HYPRLAND_PACKAGES=(
     hyprland xdg-desktop-portal-hyprland qt5-wayland qt6-wayland
     polkit-kde-agent pipewire wireplumber pipewire-pulse pipewire-alsa
     pipewire-jack grim slurp wl-clipboard swappy mako waybar
-    rofi-wayland swww swaylock-effects wlogout hyprpicker
+    fuzzel swww swaylock-effects wlogout hyprpicker
     xdg-utils xorg-xwayland pavucontrol brightnessctl playerctl
     pamixer thunar thunar-archive-plugin file-roller tumbler
     gvfs gvfs-mtp thunar-volman bluez bluez-utils blueman

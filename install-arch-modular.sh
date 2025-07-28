@@ -342,7 +342,7 @@ run_10_hyprland_utils() {
     echo -e "${BLUE}Installing Hyprland utilities...${NC}"
     
     UTIL_PACKAGES=(
-        waybar rofi-wayland swww mako
+        waybar fuzzel swww mako
         grim slurp wl-clipboard swappy
         swaylock-effects wlogout hyprpicker
         pavucontrol brightnessctl playerctl pamixer
