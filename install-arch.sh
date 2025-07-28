@@ -17,11 +17,34 @@ echo -e "${BLUE}║        Hyprland + Ghostty              ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
 
 # Update system
-echo -e "\n${YELLOW}[1/8] Updating system...${NC}"
+echo -e "\n${YELLOW}[1/11] Updating system...${NC}"
 sudo pacman -Syu --noconfirm
 
+# Detect and install GPU drivers
+echo -e "\n${YELLOW}[2/11] Detecting GPU...${NC}"
+GPU_TYPE="unknown"
+if lspci | grep -i nvidia > /dev/null; then
+    GPU_TYPE="nvidia"
+    echo -e "${GREEN}NVIDIA GPU detected${NC}"
+    read -p "Install NVIDIA drivers? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        sudo pacman -S --needed --noconfirm nvidia nvidia-utils nvidia-settings
+        echo "options nvidia-drm modeset=1" | sudo tee /etc/modprobe.d/nvidia.conf
+        echo -e "${YELLOW}Note: You may need to rebuild initramfs and reboot${NC}"
+    fi
+elif lspci | grep -i amd | grep -i vga > /dev/null; then
+    GPU_TYPE="amd"
+    echo -e "${GREEN}AMD GPU detected${NC}"
+    sudo pacman -S --needed --noconfirm mesa vulkan-radeon libva-mesa-driver
+elif lspci | grep -i intel | grep -i vga > /dev/null; then
+    GPU_TYPE="intel"
+    echo -e "${GREEN}Intel GPU detected${NC}"
+    sudo pacman -S --needed --noconfirm mesa vulkan-intel intel-media-driver
+fi
+
 # Install yay (AUR helper)
-echo -e "\n${YELLOW}[2/8] Installing yay...${NC}"
+echo -e "\n${YELLOW}[3/11] Installing yay...${NC}"
 if ! command -v yay &> /dev/null; then
     git clone https://aur.archlinux.org/yay-bin.git /tmp/yay-bin
     cd /tmp/yay-bin
@@ -31,7 +54,7 @@ if ! command -v yay &> /dev/null; then
 fi
 
 # Install base packages
-echo -e "\n${YELLOW}[3/8] Installing base packages...${NC}"
+echo -e "\n${YELLOW}[4/11] Installing base packages...${NC}"
 sudo pacman -S --needed --noconfirm \
     base-devel \
     git \
@@ -62,8 +85,24 @@ sudo pacman -S --needed --noconfirm \
     python-pipx \
     chromium
 
+# Install optional packages (may not be in all repos)
+echo -e "\n${GREEN}Installing optional packages...${NC}"
+for pkg in git-delta imagemagick; do
+    sudo pacman -S --needed --noconfirm $pkg 2>/dev/null || echo "Optional package $pkg not found, skipping..."
+done \
+    tree \
+    ncdu \
+    duf \
+    tldr \
+    eza \
+    zoxide \
+    direnv \
+    thefuck \
+    httpie \
+    glow
+
 # Install Hyprland and dependencies
-echo -e "\n${YELLOW}[4/8] Installing Hyprland...${NC}"
+echo -e "\n${YELLOW}[5/11] Installing Hyprland...${NC}"
 sudo pacman -S --needed --noconfirm \
     hyprland \
     xdg-desktop-portal-hyprland \
@@ -105,7 +144,7 @@ sudo pacman -S --needed --noconfirm \
     network-manager-applet
 
 # Install fonts
-echo -e "\n${YELLOW}[5/8] Installing fonts...${NC}"
+echo -e "\n${YELLOW}[6/11] Installing fonts...${NC}"
 sudo pacman -S --needed --noconfirm \
     ttf-jetbrains-mono-nerd \
     ttf-font-awesome \
@@ -113,17 +152,30 @@ sudo pacman -S --needed --noconfirm \
     noto-fonts \
     noto-fonts-cjk \
     noto-fonts-emoji \
-    ttf-firacode-nerd
+    ttf-firacode-nerd \
+    inter-font \
+    ttf-roboto \
+    ttf-ubuntu-font-family
 
 # Install Ghostty from AUR
-echo -e "\n${YELLOW}[6/8] Installing Ghostty...${NC}"
+echo -e "\n${YELLOW}[7/11] Installing Ghostty...${NC}"
 yay -S --needed --noconfirm ghostty-bin
 
-# Install grimblast from AUR
-yay -S --needed --noconfirm grimblast-git
+# Install AUR packages
+echo -e "\n${YELLOW}Installing AUR packages...${NC}"
+yay -S --needed --noconfirm \
+    grimblast-git \
+    spotify \
+    slack-desktop \
+    zoom \
+    visual-studio-code-bin \
+    postman-bin \
+    figma-linux-bin \
+    1password \
+    1password-cli
 
 # Clone and setup dotfiles
-echo -e "\n${YELLOW}[7/8] Setting up dotfiles...${NC}"
+echo -e "\n${YELLOW}[8/11] Setting up dotfiles...${NC}"
 DOTFILES_DIR="$HOME/.dotfiles"
 
 # Backup existing configs
@@ -152,10 +204,12 @@ fi
 cp -r "$(pwd)" "$DOTFILES_DIR"
 cd "$DOTFILES_DIR"
 
-# Install nvim-tab and dev-sync scripts
+# Install all custom scripts
 echo -e "\n${GREEN}Installing custom scripts...${NC}"
 sudo install -m 755 scripts/nvim-tab /usr/local/bin/nvim-tab
 sudo install -m 755 scripts/github-dev-sync.sh /usr/local/bin/dev-sync
+sudo install -m 755 scripts/fix-arch-audio.sh /usr/local/bin/fix-audio
+chmod +x scripts/setup-git-config.sh
 
 # Use GNU Stow to symlink configs
 echo -e "\n${GREEN}Creating symlinks...${NC}"
@@ -169,7 +223,7 @@ stow -v zsh
 stow -v git
 
 # Change default shell to zsh
-echo -e "\n${YELLOW}[8/8] Setting up shell...${NC}"
+echo -e "\n${YELLOW}[9/11] Setting up shell...${NC}"
 if [ "$SHELL" != "$(which zsh)" ]; then
     chsh -s $(which zsh)
 fi
@@ -179,6 +233,7 @@ echo -e "\n${GREEN}Enabling services...${NC}"
 systemctl --user enable pipewire
 systemctl --user enable wireplumber
 sudo systemctl enable bluetooth
+sudo systemctl enable NetworkManager
 
 # Install Oh My Zsh
 echo -e "\n${GREEN}Installing Oh My Zsh...${NC}"
@@ -219,21 +274,76 @@ npm install -g pnpm yarn typescript prettier eslint
 
 # Set up Python with pipx for global tools
 echo -e "\n${GREEN}Setting up Python tools...${NC}"
+pipx ensurepath
 pipx install poetry
 pipx install black
 pipx install ruff
 pipx install ipython
 
+# Configure Git
+echo -e "\n${GREEN}Configuring Git...${NC}"
+./scripts/setup-git-config.sh
+
+# Generate SSH key if needed
+if [ ! -f "$HOME/.ssh/id_ed25519" ] && [ ! -f "$HOME/.ssh/id_rsa" ]; then
+    echo -e "\n${GREEN}Generating SSH key for GitHub...${NC}"
+    read -p "Enter email for SSH key: " SSH_EMAIL
+    ssh-keygen -t ed25519 -C "$SSH_EMAIL" -f "$HOME/.ssh/id_ed25519" -N ""
+    echo -e "\n${YELLOW}Add this key to GitHub:${NC}"
+    cat "$HOME/.ssh/id_ed25519.pub"
+    echo -e "\n${YELLOW}Press Enter when you've added the key to GitHub...${NC}"
+    read
+fi
+
+# Install SDDM display manager
+echo -e "\n${YELLOW}[10/11] Installing display manager...${NC}"
+sudo pacman -S --needed --noconfirm sddm qt5-graphicaleffects qt5-quickcontrols2 qt5-svg
+yay -S --needed --noconfirm sddm-sugar-candy-git
+
+# Configure SDDM
+sudo systemctl enable sddm
+sudo mkdir -p /etc/sddm.conf.d
+sudo tee /etc/sddm.conf.d/theme.conf > /dev/null << EOF
+[Theme]
+Current=sugar-candy
+EOF
+
+# Create Hyprland desktop entry
+sudo tee /usr/share/wayland-sessions/hyprland.desktop > /dev/null << 'EOF'
+[Desktop Entry]
+Name=Hyprland
+Comment=An intelligent dynamic tiling Wayland compositor
+Exec=Hyprland
+Type=Application
+EOF
+
+# Configure system for better experience
+echo -e "\n${YELLOW}[11/11] Final system configuration...${NC}"
+# Enable autologin (optional - comment out if you want login screen)
+# sudo mkdir -p /etc/sddm.conf.d
+# sudo tee /etc/sddm.conf.d/autologin.conf > /dev/null << EOF
+# [Autologin]
+# User=$USER
+# Session=hyprland
+# EOF
+
 echo -e "\n${GREEN}╔════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║        Installation Complete!          ║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════╝${NC}"
-echo -e "\n${YELLOW}Please reboot and login to start Hyprland${NC}"
-echo -e "${YELLOW}After reboot, press Ctrl+Alt+F2 to switch to TTY2${NC}"
-echo -e "${YELLOW}Login and type: Hyprland${NC}"
-echo -e "\n${BLUE}Key bindings:${NC}"
-echo -e "  ${GREEN}Super + Enter${NC} - Open Ghostty"
-echo -e "  ${GREEN}Super + D${NC} - Open Rofi"
-echo -e "  ${GREEN}Super + Q${NC} - Close window"
-echo -e "  ${GREEN}Super + M${NC} - Exit Hyprland"
-echo -e "  ${GREEN}Super + [1-9]${NC} - Switch workspace"
-echo -e "  ${GREEN}Super + Shift + [1-9]${NC} - Move window to workspace"
+echo -e "\n${YELLOW}Please reboot your system${NC}"
+echo -e "${GREEN}You'll see a beautiful login screen where you can select Hyprland!${NC}"
+echo -e "\n${BLUE}Key bindings (matching your Aerospace):${NC}"
+echo -e "  ${GREEN}Alt + Enter${NC} - Open Ghostty"
+echo -e "  ${GREEN}Alt + F${NC} - Fullscreen"
+echo -e "  ${GREEN}Alt + H/J/K/L${NC} - Focus windows"
+echo -e "  ${GREEN}Alt + Shift + H/J/K/L${NC} - Move windows"
+echo -e "  ${GREEN}Alt + [1-9,A-Z]${NC} - Switch workspace"
+echo -e "  ${GREEN}Alt + Shift + [1-9,A-Z]${NC} - Move window to workspace"
+echo -e "  ${GREEN}Alt + Tab${NC} - Previous workspace"
+echo -e "  ${GREEN}Alt + -/=${NC} - Resize windows"
+echo -e "\n${YELLOW}Apps are pre-assigned to workspaces:${NC}"
+echo -e "  ${GREEN}C${NC} - Chrome Profile 1"
+echo -e "  ${GREEN}S${NC} - Slack"
+echo -e "  ${GREEN}M${NC} - WhatsApp"
+echo -e "  ${GREEN}F${NC} - Figma"
+echo -e "  ${GREEN}P${NC} - Postman"

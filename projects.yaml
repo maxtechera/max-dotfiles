@@ -11,7 +11,7 @@ projects:
       - npm install
       - cp .env.example .env
     post_clone_message: "Remember to update .env with your API keys"
-  
+
   # Add your projects here following this pattern:
   # project-name:
   #   repo: git@github.com:owner/repo.git
@@ -21,3 +21,4 @@ projects:
   #     - npm install
   #     - make setup
   #   post_clone_message: "Optional message after cloning"
+
