@@ -1,5 +1,6 @@
 #!/bin/bash
-# Flexible Arch Linux Installer
+# Flexible Arch Linux Installer - Wizard Mode
+# Automatically progresses through installation steps
 # Supports existing partitions, multi-disk, and resuming from any step
 
 set -e
@@ -9,75 +10,59 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
 NC='\033[0m'
 
 # State file to track progress
 STATE_FILE="/tmp/arch-install-state"
 
 echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║  Arch Linux Flexible Installer         ║${NC}"
+echo -e "${BLUE}║  Arch Linux Installation Wizard        ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
+echo
 
 # Load previous state if exists
 if [ -f "$STATE_FILE" ]; then
     source "$STATE_FILE"
-    echo -e "${GREEN}Found previous installation state${NC}"
+    echo -e "${GREEN}✓ Found previous installation state${NC}"
+    echo -e "${YELLOW}  Resuming from where you left off...${NC}"
+    echo
 fi
 
 # Helper function to save state
 save_state() {
-    echo "export INSTALL_STEP=$1" > "$STATE_FILE"
-    [ ! -z "$ROOT_PART" ] && echo "export ROOT_PART=$ROOT_PART" >> "$STATE_FILE"
-    [ ! -z "$EFI_PART" ] && echo "export EFI_PART=$EFI_PART" >> "$STATE_FILE"
-    [ ! -z "$SWAP_PART" ] && echo "export SWAP_PART=$SWAP_PART" >> "$STATE_FILE"
-    [ ! -z "$BOOT_MODE" ] && echo "export BOOT_MODE=$BOOT_MODE" >> "$STATE_FILE"
-    [ ! -z "$USERNAME" ] && echo "export USERNAME=$USERNAME" >> "$STATE_FILE"
-    [ ! -z "$HOSTNAME" ] && echo "export HOSTNAME=$HOSTNAME" >> "$STATE_FILE"
+    {
+        echo "export CURRENT_STEP=$1"
+        [ ! -z "$ROOT_PART" ] && echo "export ROOT_PART=$ROOT_PART"
+        [ ! -z "$EFI_PART" ] && echo "export EFI_PART=$EFI_PART"
+        [ ! -z "$SWAP_PART" ] && echo "export SWAP_PART=$SWAP_PART"
+        [ ! -z "$BOOT_MODE" ] && echo "export BOOT_MODE=$BOOT_MODE"
+        [ ! -z "$USERNAME" ] && echo "export USERNAME=$USERNAME"
+        [ ! -z "$HOSTNAME" ] && echo "export HOSTNAME=$HOSTNAME"
+    } > "$STATE_FILE"
 }
 
-# Check what's already done
-check_status() {
-    echo -e "\n${YELLOW}Checking system status...${NC}"
+# Progress bar
+show_progress() {
+    local current=$1
+    local total=9
+    local width=50
+    local progress=$((current * width / total))
     
-    # Check if we're in chroot
-    if [ -f /etc/arch-release ] && [ ! -d /mnt/etc ]; then
-        echo -e "${GREEN}✓ Running inside installed system${NC}"
-        IN_CHROOT=true
-    fi
-    
-    # Check if partitions are mounted
-    if mountpoint -q /mnt; then
-        echo -e "${GREEN}✓ Root partition mounted${NC}"
-        ROOT_MOUNTED=true
-    fi
-    
-    # Check if base system is installed
-    if [ -f /mnt/etc/fstab ] || [ -f /etc/fstab ]; then
-        echo -e "${GREEN}✓ Base system installed${NC}"
-        BASE_INSTALLED=true
-    fi
-}
-
-# Menu to select step
-show_menu() {
-    echo -e "\n${BLUE}Select step to start from:${NC}"
-    echo "1) Check prerequisites"
-    echo "2) Partition disk (skip if already done)"
-    echo "3) Format partitions (skip if already done)"
-    echo "4) Mount partitions"
-    echo "5) Install base system"
-    echo "6) Configure system (fstab, timezone, etc)"
-    echo "7) Install bootloader"
-    echo "8) Create user account"
-    echo "9) Install essential packages"
-    echo "0) Start from beginning"
-    echo
-    read -p "Choice [0-9]: " STEP_CHOICE
+    echo -ne "\r${PURPLE}Progress: [${NC}"
+    for ((i=0; i<width; i++)); do
+        if [ $i -lt $progress ]; then
+            echo -ne "${GREEN}#${NC}"
+        else
+            echo -ne "-"
+        fi
+    done
+    echo -ne "${PURPLE}] $current/$total${NC}"
 }
 
 # Step 1: Prerequisites
 step_prerequisites() {
-    echo -e "\n${YELLOW}[Step 1] Checking prerequisites...${NC}"
+    echo -e "\n${BLUE}[Step 1/9] Checking prerequisites...${NC}"
     
     # Check UEFI/BIOS
     if [ -d /sys/firmware/efi/efivars ]; then
@@ -85,380 +70,476 @@ step_prerequisites() {
         echo -e "${GREEN}✓ UEFI mode detected${NC}"
     else
         BOOT_MODE="BIOS"
-        echo -e "${YELLOW}⚠ BIOS mode detected${NC}"
+        echo -e "${YELLOW}✓ BIOS mode detected${NC}"
     fi
     
     # Check internet
+    echo -n "Checking internet connection... "
     if ping -c 1 google.com &> /dev/null; then
-        echo -e "${GREEN}✓ Internet connected${NC}"
+        echo -e "${GREEN}Connected${NC}"
     else
-        echo -e "${RED}✗ No internet connection${NC}"
-        echo "Connect with: iwctl"
+        echo -e "${RED}Failed${NC}"
+        echo -e "\n${YELLOW}Please connect to internet first:${NC}"
+        echo "1. For WiFi: iwctl"
+        echo "2. For Ethernet: should work automatically"
         exit 1
     fi
     
     # Update clock
+    echo -n "Updating system clock... "
     timedatectl set-ntp true
-    echo -e "${GREEN}✓ System clock updated${NC}"
+    echo -e "${GREEN}Done${NC}"
     
-    save_state "prerequisites_done"
+    save_state 1
+    sleep 1
 }
 
-# Step 2: Disk selection and partitioning
+# Step 2: Disk detection and partitioning
 step_partition() {
-    echo -e "\n${YELLOW}[Step 2] Disk partitioning${NC}"
+    echo -e "\n${BLUE}[Step 2/9] Disk partitioning${NC}"
     
-    # Show current disk layout
-    echo -e "\n${BLUE}Current disk layout:${NC}"
-    lsblk
+    # Auto-detect if partitions exist
+    echo "Analyzing disk layout..."
+    echo
+    lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT
+    echo
     
-    echo -e "\n${YELLOW}Options:${NC}"
-    echo "1) Use existing partitions"
-    echo "2) Auto-partition a disk (WARNING: will erase!)"
-    echo "3) Manual partition (opens cfdisk)"
-    echo "4) Skip (already partitioned)"
-    read -p "Choice [1-4]: " PART_CHOICE
+    # Check for existing Linux partitions
+    if lsblk -o FSTYPE | grep -q "ext4"; then
+        echo -e "${YELLOW}Found existing Linux partitions${NC}"
+        read -p "Use existing partitions? (y/n) [y]: " USE_EXISTING
+        USE_EXISTING=${USE_EXISTING:-y}
+        
+        if [ "$USE_EXISTING" = "y" ]; then
+            save_state 2
+            return
+        fi
+    fi
     
-    case $PART_CHOICE in
-        1)
-            echo "Existing partitions will be used in next step"
-            ;;
-        2)
-            echo -e "\n${YELLOW}Available disks:${NC}"
-            lsblk -d -o NAME,SIZE,TYPE | grep disk
-            read -p "Disk to partition (e.g., sda): " DISK
-            DISK="/dev/$DISK"
-            
-            echo -e "${RED}WARNING: This will ERASE $DISK${NC}"
-            read -p "Continue? (yes/no): " CONFIRM
-            [ "$CONFIRM" != "yes" ] && exit 1
-            
-            # Auto partition based on UEFI/BIOS
-            if [ "$BOOT_MODE" = "UEFI" ]; then
-                parted "$DISK" --script mklabel gpt \
-                    mkpart ESP fat32 1MiB 512MiB \
-                    set 1 esp on \
-                    mkpart primary linux-swap 512MiB 8.5GiB \
-                    mkpart primary ext4 8.5GiB 100%
-            else
-                parted "$DISK" --script mklabel msdos \
-                    mkpart primary ext4 1MiB -8GiB \
-                    set 1 boot on \
-                    mkpart primary linux-swap -8GiB 100%
-            fi
-            echo -e "${GREEN}✓ Disk partitioned${NC}"
-            ;;
-        3)
-            read -p "Disk to partition manually (e.g., sda): " DISK
-            cfdisk "/dev/$DISK"
-            ;;
-        4)
-            echo "Skipping partition step"
-            ;;
-    esac
+    # No existing partitions or user wants new ones
+    echo -e "\n${YELLOW}Available disks:${NC}"
+    lsblk -d -o NAME,SIZE,TYPE | grep disk
+    echo
     
-    save_state "partition_done"
+    read -p "Select disk to install (e.g., sda, nvme0n1): " DISK_NAME
+    DISK="/dev/$DISK_NAME"
+    
+    # Confirm
+    echo -e "\n${RED}WARNING: This will ERASE all data on ${DISK}${NC}"
+    lsblk "$DISK"
+    read -p "Continue? (type 'yes' to confirm): " CONFIRM
+    
+    if [ "$CONFIRM" != "yes" ]; then
+        echo "Installation cancelled"
+        exit 1
+    fi
+    
+    echo "Partitioning disk..."
+    # Auto partition based on UEFI/BIOS
+    if [ "$BOOT_MODE" = "UEFI" ]; then
+        parted "$DISK" --script mklabel gpt \
+            mkpart ESP fat32 1MiB 512MiB \
+            set 1 esp on \
+            mkpart primary linux-swap 512MiB 8.5GiB \
+            mkpart primary ext4 8.5GiB 100%
+    else
+        parted "$DISK" --script mklabel msdos \
+            mkpart primary ext4 1MiB -8GiB \
+            set 1 boot on \
+            mkpart primary linux-swap -8GiB 100%
+    fi
+    
+    echo -e "${GREEN}✓ Disk partitioned${NC}"
+    save_state 2
+    sleep 2
 }
 
 # Step 3: Format partitions
 step_format() {
-    echo -e "\n${YELLOW}[Step 3] Format partitions${NC}"
+    echo -e "\n${BLUE}[Step 3/9] Formatting partitions${NC}"
     
-    echo -e "\n${BLUE}Current partitions:${NC}"
-    lsblk
-    
-    echo -e "\n${YELLOW}Select partitions to use:${NC}"
-    
-    # Root partition
-    read -p "Root partition (e.g., sda2 or nvme0n1p2): " ROOT
-    ROOT_PART="/dev/$ROOT"
-    
-    # Check if already formatted
-    if blkid "$ROOT_PART" | grep -q 'TYPE="ext4"'; then
-        echo -e "${YELLOW}Root partition already formatted as ext4${NC}"
-        read -p "Format anyway? (y/n): " FORMAT_ROOT
-    else
-        FORMAT_ROOT="y"
-    fi
-    
-    [ "$FORMAT_ROOT" = "y" ] && mkfs.ext4 "$ROOT_PART"
-    
-    # EFI partition (UEFI only)
-    if [ "$BOOT_MODE" = "UEFI" ]; then
-        read -p "EFI partition (e.g., sda1): " EFI
-        EFI_PART="/dev/$EFI"
+    # Auto-detect partitions if not set
+    if [ -z "$ROOT_PART" ]; then
+        echo "Detecting partitions..."
+        echo
+        lsblk -o NAME,SIZE,FSTYPE,LABEL
+        echo
         
-        if blkid "$EFI_PART" | grep -q 'TYPE="vfat"'; then
-            echo -e "${YELLOW}EFI partition already formatted${NC}"
+        # Try to auto-detect root partition
+        if [ "$BOOT_MODE" = "UEFI" ]; then
+            # For UEFI, root is usually the largest ext4 or unformatted partition
+            read -p "Root partition (e.g., sda3, nvme0n1p3): " ROOT_NAME
+            ROOT_PART="/dev/$ROOT_NAME"
+            
+            read -p "EFI partition (e.g., sda1, nvme0n1p1): " EFI_NAME
+            EFI_PART="/dev/$EFI_NAME"
+            
+            read -p "Swap partition (optional, press Enter to skip): " SWAP_NAME
+            [ ! -z "$SWAP_NAME" ] && SWAP_PART="/dev/$SWAP_NAME"
         else
-            mkfs.fat -F32 "$EFI_PART"
+            # For BIOS
+            read -p "Root partition (e.g., sda1): " ROOT_NAME
+            ROOT_PART="/dev/$ROOT_NAME"
+            
+            read -p "Swap partition (optional): " SWAP_NAME
+            [ ! -z "$SWAP_NAME" ] && SWAP_PART="/dev/$SWAP_NAME"
         fi
     fi
     
-    # Swap partition (optional)
-    read -p "Swap partition (leave empty to skip): " SWAP
-    if [ ! -z "$SWAP" ]; then
-        SWAP_PART="/dev/$SWAP"
-        if blkid "$SWAP_PART" | grep -q 'TYPE="swap"'; then
-            echo -e "${YELLOW}Swap already formatted${NC}"
+    # Format with progress
+    echo -n "Formatting root partition... "
+    if ! blkid "$ROOT_PART" | grep -q 'TYPE="ext4"'; then
+        mkfs.ext4 -q "$ROOT_PART"
+        echo -e "${GREEN}Done${NC}"
+    else
+        echo -e "${YELLOW}Already formatted${NC}"
+    fi
+    
+    if [ "$BOOT_MODE" = "UEFI" ] && [ ! -z "$EFI_PART" ]; then
+        echo -n "Formatting EFI partition... "
+        if ! blkid "$EFI_PART" | grep -q 'TYPE="vfat"'; then
+            mkfs.fat -F32 "$EFI_PART" 2>/dev/null
+            echo -e "${GREEN}Done${NC}"
         else
-            mkswap "$SWAP_PART"
+            echo -e "${YELLOW}Already formatted${NC}"
         fi
     fi
     
-    save_state "format_done"
+    if [ ! -z "$SWAP_PART" ]; then
+        echo -n "Setting up swap... "
+        if ! blkid "$SWAP_PART" | grep -q 'TYPE="swap"'; then
+            mkswap "$SWAP_PART" >/dev/null
+            echo -e "${GREEN}Done${NC}"
+        else
+            echo -e "${YELLOW}Already formatted${NC}"
+        fi
+    fi
+    
+    save_state 3
+    sleep 1
 }
 
 # Step 4: Mount partitions
 step_mount() {
-    echo -e "\n${YELLOW}[Step 4] Mount partitions${NC}"
-    
-    # Check if already mounted
-    if mountpoint -q /mnt; then
-        echo -e "${YELLOW}Root already mounted${NC}"
-        read -p "Unmount and remount? (y/n): " REMOUNT
-        [ "$REMOUNT" = "y" ] && umount -R /mnt
-    fi
+    echo -e "\n${BLUE}[Step 4/9] Mounting partitions${NC}"
     
     # Mount root
-    if [ -z "$ROOT_PART" ]; then
-        lsblk
-        read -p "Root partition to mount (e.g., /dev/sda2): " ROOT_PART
+    echo -n "Mounting root partition... "
+    if ! mountpoint -q /mnt; then
+        mount "$ROOT_PART" /mnt
+        echo -e "${GREEN}Done${NC}"
+    else
+        echo -e "${YELLOW}Already mounted${NC}"
     fi
     
-    mount "$ROOT_PART" /mnt
-    echo -e "${GREEN}✓ Root mounted${NC}"
-    
     # Mount EFI
-    if [ "$BOOT_MODE" = "UEFI" ]; then
+    if [ "$BOOT_MODE" = "UEFI" ] && [ ! -z "$EFI_PART" ]; then
+        echo -n "Mounting EFI partition... "
         mkdir -p /mnt/boot/efi
-        if [ -z "$EFI_PART" ]; then
-            read -p "EFI partition to mount (e.g., /dev/sda1): " EFI_PART
+        if ! mountpoint -q /mnt/boot/efi; then
+            mount "$EFI_PART" /mnt/boot/efi
+            echo -e "${GREEN}Done${NC}"
+        else
+            echo -e "${YELLOW}Already mounted${NC}"
         fi
-        mount "$EFI_PART" /mnt/boot/efi
-        echo -e "${GREEN}✓ EFI mounted${NC}"
     fi
     
     # Enable swap
     if [ ! -z "$SWAP_PART" ]; then
-        swapon "$SWAP_PART" 2>/dev/null || echo "Swap already enabled"
-        echo -e "${GREEN}✓ Swap enabled${NC}"
+        echo -n "Enabling swap... "
+        if ! swapon -s | grep -q "$SWAP_PART"; then
+            swapon "$SWAP_PART"
+            echo -e "${GREEN}Done${NC}"
+        else
+            echo -e "${YELLOW}Already enabled${NC}"
+        fi
     fi
     
-    save_state "mount_done"
+    save_state 4
+    sleep 1
 }
 
 # Step 5: Install base system
 step_install_base() {
-    echo -e "\n${YELLOW}[Step 5] Install base system${NC}"
+    echo -e "\n${BLUE}[Step 5/9] Installing base system${NC}"
+    echo "This will take a few minutes..."
     
     # Check if already installed
     if [ -f /mnt/bin/bash ]; then
         echo -e "${YELLOW}Base system already installed${NC}"
-        read -p "Reinstall? (y/n): " REINSTALL
-        [ "$REINSTALL" != "y" ] && return
+        save_state 5
+        return
     fi
     
-    echo "Installing base packages..."
+    # Install with progress indication
+    echo "Installing essential packages..."
     pacstrap /mnt base linux linux-firmware base-devel \
         networkmanager vim nano sudo git \
         intel-ucode amd-ucode
     
     echo -e "${GREEN}✓ Base system installed${NC}"
-    save_state "base_installed"
+    save_state 5
 }
 
 # Step 6: Configure system
 step_configure() {
-    echo -e "\n${YELLOW}[Step 6] Configure system${NC}"
+    echo -e "\n${BLUE}[Step 6/9] Configuring system${NC}"
     
     # Generate fstab
+    echo -n "Generating fstab... "
     if [ ! -f /mnt/etc/fstab ] || [ ! -s /mnt/etc/fstab ]; then
         genfstab -U /mnt >> /mnt/etc/fstab
-        echo -e "${GREEN}✓ Generated fstab${NC}"
+        echo -e "${GREEN}Done${NC}"
     else
-        echo -e "${YELLOW}fstab already exists${NC}"
+        echo -e "${YELLOW}Already exists${NC}"
     fi
     
-    # Create configuration script
+    # Configure in chroot
     cat > /mnt/configure-system.sh << 'CONF_SCRIPT'
 #!/bin/bash
-
-# Colors
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
+set -e
 
 # Timezone
 if [ ! -f /etc/localtime ]; then
+    echo -n "Setting timezone... "
     ln -sf /usr/share/zoneinfo/America/New_York /etc/localtime
     hwclock --systohc
-    echo -e "${GREEN}✓ Timezone set${NC}"
+    echo "Done"
 fi
 
 # Locale
 if ! grep -q "en_US.UTF-8" /etc/locale.gen; then
-    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
-    locale-gen
+    echo -n "Configuring locale... "
+    sed -i 's/#en_US.UTF-8/en_US.UTF-8/g' /etc/locale.gen
+    locale-gen >/dev/null 2>&1
     echo "LANG=en_US.UTF-8" > /etc/locale.conf
-    echo -e "${GREEN}✓ Locale configured${NC}"
+    echo "Done"
 fi
 
 # Hostname
 if [ ! -f /etc/hostname ] || [ ! -s /etc/hostname ]; then
-    read -p "Enter hostname: " HOSTNAME
+    echo
+    read -p "Enter hostname (e.g., archlinux): " HOSTNAME
+    HOSTNAME=${HOSTNAME:-archlinux}
     echo "$HOSTNAME" > /etc/hostname
     cat > /etc/hosts << EOF
 127.0.0.1   localhost
 ::1         localhost
 127.0.1.1   $HOSTNAME.localdomain $HOSTNAME
 EOF
-    echo -e "${GREEN}✓ Hostname set${NC}"
+    echo "Hostname set to: $HOSTNAME"
 fi
 
-# Enable NetworkManager
-systemctl enable NetworkManager 2>/dev/null
-echo -e "${GREEN}✓ NetworkManager enabled${NC}"
+# Enable services
+systemctl enable NetworkManager >/dev/null 2>&1
+echo "✓ System configured"
 CONF_SCRIPT
     
     chmod +x /mnt/configure-system.sh
     arch-chroot /mnt /configure-system.sh
     rm /mnt/configure-system.sh
     
-    save_state "configure_done"
+    save_state 6
+    sleep 1
 }
 
 # Step 7: Install bootloader
 step_bootloader() {
-    echo -e "\n${YELLOW}[Step 7] Install bootloader${NC}"
+    echo -e "\n${BLUE}[Step 7/9] Installing bootloader${NC}"
     
-    cat > /mnt/install-bootloader.sh << 'BOOT_SCRIPT'
+    cat > /mnt/install-bootloader.sh << BOOT_SCRIPT
 #!/bin/bash
+set -e
 
 # Check if GRUB already installed
 if command -v grub-install &> /dev/null; then
     echo "GRUB already installed"
-    read -p "Reinstall? (y/n): " REINSTALL
-    [ "$REINSTALL" != "y" ] && exit 0
-fi
-
-if [ -d /sys/firmware/efi/efivars ]; then
-    pacman -S --noconfirm grub efibootmgr
-    grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB
 else
-    pacman -S --noconfirm grub
-    read -p "Disk for bootloader (e.g., /dev/sda): " DISK
-    grub-install --target=i386-pc "$DISK"
+    echo -n "Installing GRUB... "
+    if [ -d /sys/firmware/efi/efivars ]; then
+        pacman -S --noconfirm grub efibootmgr >/dev/null 2>&1
+        echo "Done"
+        echo -n "Installing bootloader... "
+        grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB >/dev/null 2>&1
+    else
+        pacman -S --noconfirm grub >/dev/null 2>&1
+        echo "Done"
+        echo "Installing bootloader to ${DISK}..."
+        grub-install --target=i386-pc "$DISK" >/dev/null 2>&1
+    fi
+    echo "Done"
 fi
 
-grub-mkconfig -o /boot/grub/grub.cfg
+echo -n "Generating GRUB config... "
+grub-mkconfig -o /boot/grub/grub.cfg >/dev/null 2>&1
+echo "Done"
 echo "✓ Bootloader installed"
 BOOT_SCRIPT
+    
+    # Pass DISK variable if set
+    if [ ! -z "$DISK" ]; then
+        sed -i "s|\$DISK|$DISK|g" /mnt/install-bootloader.sh
+    else
+        # Try to detect disk from ROOT_PART
+        DISK=$(echo "$ROOT_PART" | sed 's/[0-9]*$//' | sed 's/p[0-9]*$//')
+        sed -i "s|\$DISK|$DISK|g" /mnt/install-bootloader.sh
+    fi
     
     chmod +x /mnt/install-bootloader.sh
     arch-chroot /mnt /install-bootloader.sh
     rm /mnt/install-bootloader.sh
     
-    save_state "bootloader_done"
+    save_state 7
 }
 
 # Step 8: Create user
 step_user() {
-    echo -e "\n${YELLOW}[Step 8] Create user account${NC}"
+    echo -e "\n${BLUE}[Step 8/9] Creating user account${NC}"
     
     cat > /mnt/create-user.sh << 'USER_SCRIPT'
 #!/bin/bash
+set -e
 
-# Check if non-root user exists
-if [ $(cat /etc/passwd | grep -v "root\|nobody\|systemd" | grep -c "/home") -gt 0 ]; then
-    echo "User already exists:"
-    cat /etc/passwd | grep "/home" | cut -d: -f1
-    read -p "Create another user? (y/n): " CREATE
-    [ "$CREATE" != "y" ] && exit 0
+# Check if user was created in previous run
+if [ ! -z "$USERNAME" ] && id "$USERNAME" &>/dev/null; then
+    echo "User $USERNAME already exists"
+else
+    # Root password
+    echo
+    echo "First, set the root password:"
+    passwd root
+    
+    # Create user
+    echo
+    read -p "Enter username: " USERNAME
+    USERNAME=${USERNAME:-user}
+    
+    useradd -m -G wheel -s /bin/bash "$USERNAME"
+    echo
+    echo "Set password for $USERNAME:"
+    passwd "$USERNAME"
+    
+    # Save username for next steps
+    echo "export USERNAME=$USERNAME" >> /tmp/user-created
 fi
-
-# Set root password if not set
-passwd -S root | grep -q "NP\|L" && passwd root
-
-# Create user
-read -p "Username: " USERNAME
-useradd -m -G wheel -s /bin/bash "$USERNAME"
-passwd "$USERNAME"
 
 # Enable sudo
 if ! grep -q "^%wheel ALL=(ALL:ALL) ALL" /etc/sudoers; then
     echo "%wheel ALL=(ALL:ALL) ALL" >> /etc/sudoers
 fi
 
-echo "✓ User $USERNAME created"
+echo "✓ User configuration complete"
 USER_SCRIPT
     
     chmod +x /mnt/create-user.sh
     arch-chroot /mnt /create-user.sh
-    rm /mnt/create-user.sh
     
-    save_state "user_done"
+    # Get username from chroot
+    if [ -f /mnt/tmp/user-created ]; then
+        source /mnt/tmp/user-created
+        rm /mnt/tmp/user-created
+    fi
+    
+    rm /mnt/create-user.sh
+    save_state 8
 }
 
 # Step 9: Essential packages
 step_packages() {
-    echo -e "\n${YELLOW}[Step 9] Install essential packages${NC}"
+    echo -e "\n${BLUE}[Step 9/9] Installing essential packages${NC}"
+    echo "This will take a few minutes..."
     
     cat > /mnt/install-packages.sh << 'PKG_SCRIPT'
 #!/bin/bash
+set -e
 
-echo "Installing essential packages..."
+echo "Installing graphics and audio..."
 pacman -S --needed --noconfirm \
     xorg-server xorg-xinit \
     pipewire pipewire-pulse pipewire-alsa pipewire-jack wireplumber \
-    mesa vulkan-intel vulkan-radeon \
+    mesa vulkan-intel vulkan-radeon >/dev/null 2>&1
+
+echo "Installing fonts and utilities..."
+pacman -S --needed --noconfirm \
     ttf-liberation noto-fonts \
     firefox \
     openssh \
     man-db man-pages \
     htop neofetch \
-    bash-completion
+    bash-completion >/dev/null 2>&1
 
-systemctl enable sshd
+systemctl enable sshd >/dev/null 2>&1
 
 echo "✓ Essential packages installed"
-echo
-echo "Installation complete! Next steps:"
-echo "1. Exit chroot: exit"
-echo "2. Unmount: umount -R /mnt"
-echo "3. Reboot: reboot"
-echo "4. After reboot, clone dotfiles:"
-echo "   git clone https://github.com/maxtechera/max-dotfiles.git"
-echo "   cd max-dotfiles && ./install.sh"
 PKG_SCRIPT
     
     chmod +x /mnt/install-packages.sh
     arch-chroot /mnt /install-packages.sh
     rm /mnt/install-packages.sh
     
-    save_state "packages_done"
+    save_state 9
 }
 
-# Main execution
-check_status
+# Main wizard flow
+main() {
+    # Determine starting step
+    CURRENT_STEP=${CURRENT_STEP:-0}
+    
+    echo -e "${PURPLE}Starting installation wizard...${NC}"
+    echo -e "${YELLOW}The wizard will guide you through each step automatically.${NC}"
+    echo -e "${YELLOW}You can restart at any time and it will resume where you left off.${NC}"
+    echo
+    
+    # Run steps based on current progress
+    if [ $CURRENT_STEP -lt 1 ]; then step_prerequisites; fi
+    show_progress 1
+    
+    if [ $CURRENT_STEP -lt 2 ]; then step_partition; fi
+    show_progress 2
+    
+    if [ $CURRENT_STEP -lt 3 ]; then step_format; fi
+    show_progress 3
+    
+    if [ $CURRENT_STEP -lt 4 ]; then step_mount; fi
+    show_progress 4
+    
+    if [ $CURRENT_STEP -lt 5 ]; then step_install_base; fi
+    show_progress 5
+    
+    if [ $CURRENT_STEP -lt 6 ]; then step_configure; fi
+    show_progress 6
+    
+    if [ $CURRENT_STEP -lt 7 ]; then step_bootloader; fi
+    show_progress 7
+    
+    if [ $CURRENT_STEP -lt 8 ]; then step_user; fi
+    show_progress 8
+    
+    if [ $CURRENT_STEP -lt 9 ]; then step_packages; fi
+    show_progress 9
+    
+    # Installation complete
+    echo -e "\n\n${GREEN}╔════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║     Installation Complete! 🎉          ║${NC}"
+    echo -e "${GREEN}╚════════════════════════════════════════╝${NC}"
+    
+    echo -e "\n${YELLOW}Next steps:${NC}"
+    echo "1. Exit chroot (if in chroot): exit"
+    echo "2. Unmount partitions: umount -R /mnt"
+    echo "3. Reboot: reboot"
+    echo
+    echo -e "${BLUE}After reboot:${NC}"
+    echo "1. Login as: ${USERNAME:-your-user}"
+    echo "2. Connect to internet: nmtui"
+    echo "3. Clone dotfiles:"
+    echo "   git clone https://github.com/maxtechera/max-dotfiles.git"
+    echo "   cd max-dotfiles && ./install.sh"
+    echo
+    echo -e "${GREEN}Enjoy your new Arch Linux system!${NC}"
+    
+    # Clean up state file
+    rm -f "$STATE_FILE"
+}
 
-if [ -z "$STEP_CHOICE" ]; then
-    show_menu
-fi
-
-case $STEP_CHOICE in
-    0|1) step_prerequisites ;;&
-    0|2) step_partition ;;&
-    0|3) step_format ;;&
-    0|4) step_mount ;;&
-    0|5) step_install_base ;;&
-    0|6) step_configure ;;&
-    0|7) step_bootloader ;;&
-    0|8) step_user ;;&
-    0|9) step_packages ;;
-    *) echo "Running from current step based on state..." ;;
-esac
-
-echo -e "\n${GREEN}╔════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║        Process Complete!               ║${NC}"
-echo -e "${GREEN}╚════════════════════════════════════════╝${NC}"
+# Run the wizard
+main
