@@ -2,10 +2,11 @@
 # Cross-platform terminal setup (macOS & Linux)
 
 # Font
-font-family = JetBrainsMono Nerd Font
+font-family = FiraCode Nerd Font
 font-size = 14
-font-feature = -liga
-font-feature = -calt
+# Enable ligatures for FiraCode
+font-feature = +liga
+font-feature = +calt
 
 # Theme (Nord inspired - matches both environments)
 background = #2e3440
