@@ -1,119 +1,182 @@
-# Arch Linux Dotfiles
+# Cross-Platform Dotfiles (macOS + Arch Linux)
 
-Modern, reproducible Arch Linux setup with Hyprland, Ghostty, and developer tools.
+A unified configuration that provides an identical command-line and window management experience across macOS and Arch Linux.
 
-## Features
+## 🚨 Quick Start - Fresh Arch Install
 
-- **Window Manager**: Hyprland with smooth animations
-- **Terminal**: Ghostty with Nord theme
-- **Shell**: Zsh with Oh-My-Zsh
-- **Editor**: Neovim with LazyVim
-- **Multiplexer**: Tmux with sensible defaults
-- **Tools**: Modern CLI replacements (eza, bat, ripgrep, fd, etc.)
-
-## Installation
-
-### 1. Install Base Arch Linux
-
-Boot from Arch ISO and install the base system. Make sure you have:
-- Base system installed
-- User account created
-- Network connectivity
-- sudo configured
-
-### 2. Clone This Repository
+**From Arch USB → Working Desktop in ~30 minutes!**
 
 ```bash
-git clone https://github.com/yourusername/arch-dotfiles.git
-cd arch-dotfiles
-```
+# 1. Boot Arch USB and connect WiFi
+iwctl  # or use ethernet
 
-### 3. Run Installation Script
+# 2. Run installation wizard
+curl -O https://raw.githubusercontent.com/maxtechera/max-dotfiles/main/arch-installer.sh
+chmod +x arch-installer.sh
+./arch-installer.sh
 
-```bash
-chmod +x install.sh
+# 3. Reboot, login, and install dotfiles
+git clone https://github.com/maxtechera/max-dotfiles.git
+cd max-dotfiles
 ./install.sh
 ```
 
-This will:
-- Install all required packages
-- Set up configuration files using GNU Stow
-- Configure services
-- Install AUR helper (yay)
+The installer wizard handles everything: existing partitions, resuming from interruptions, and guides you step-by-step!
 
-### 4. Reboot and Start Hyprland
+## 🎯 Goal
 
-After installation:
-1. Reboot your system
-2. Login to TTY (Ctrl+Alt+F2)
-3. Run: `Hyprland`
+Create a seamless experience between macOS and Arch Linux with:
+- Same terminal (Ghostty with FiraCode ligatures)
+- Same window management keybindings (Aerospace/Hyprland)
+- Same development tools (Node via NVM, Python via pipx)
+- Same shell experience (Zsh + Oh My Zsh)
+- Same editor (Neovim with ThePrimeagen config)
 
-## Key Bindings
+## 🚀 Quick Start - macOS
 
-### Hyprland
-- `Super + Enter` - Open Ghostty terminal
-- `Super + D` - Open Rofi application launcher
-- `Super + Q` - Close window
-- `Super + M` - Exit Hyprland
-- `Super + [1-9]` - Switch workspace
-- `Super + Shift + [1-9]` - Move window to workspace
-- `Super + S` - Screenshot selection
-- `Super + [h,j,k,l]` - Move focus (vim-style)
-- `Super + Shift + [h,j,k,l]` - Move window
-- `Super + Ctrl + [h,j,k,l]` - Resize window
-
-### Tmux
-- `Ctrl + a` - Prefix key
-- `Prefix + |` - Split vertical
-- `Prefix + -` - Split horizontal
-- `Prefix + [h,j,k,l]` - Navigate panes
-- `Prefix + r` - Reload config
-
-## Customization
-
-### Wallpaper
-Place your wallpaper at `~/Pictures/wallpaper.jpg`
-
-### Git Configuration
-Edit `git/.gitconfig` and update:
 ```bash
-[user]
-    name = Your Name
-    email = your.email@example.com
+git clone https://github.com/maxtechera/max-dotfiles.git
+cd max-dotfiles
+./install.sh  # Auto-detects macOS and runs appropriate setup
 ```
 
-### Additional Packages
-Add more packages to `install.sh` as needed.
+## 📦 What Gets Installed
 
-## Directory Structure
+### CLI Tools (Both Platforms)
+- **Terminal**: Ghostty with FiraCode font + ligatures
+- **Shell**: Zsh with Oh My Zsh, autosuggestions, syntax highlighting
+- **Editor**: Neovim with ThePrimeagen's config
+- **Dev Tools**: Git, tmux, lazygit, GitHub CLI
+- **Modern Utils**: eza (ls), zoxide (cd), bat (cat), ripgrep, fzf
+- **Languages**: Node.js (via NVM), Python (with pipx)
+- **Package Managers**: pnpm, yarn, poetry
+
+### GUI Applications
+- **Browsers**: Google Chrome
+- **Development**: VS Code, Postman
+- **Design**: Figma
+- **Communication**: Slack, Zoom
+- **Media**: Spotify
+- **Security**: 1Password + CLI
+
+### Platform-Specific
+- **macOS**: Aerospace (tiling window manager)
+- **Arch**: Hyprland (Wayland compositor) + SDDM (login manager)
+
+## ⌨️ Unified Keybindings
+
+Both Aerospace (macOS) and Hyprland (Arch) use identical keybindings:
+
+### Window Management
+- `Alt + Enter` - Open Ghostty terminal
+- `Alt + F` - Toggle fullscreen
+- `Alt + H/J/K/L` - Focus windows (vim-style)
+- `Alt + Shift + H/J/K/L` - Move windows
+- `Alt + -/=` - Resize windows
+- `Alt + Tab` - Previous workspace
+
+### Workspace Navigation
+- `Alt + [1-9]` - Switch to numbered workspace
+- `Alt + [A-Z]` - Switch to lettered workspace
+- `Alt + Shift + [1-9,A-Z]` - Move window to workspace
+
+### Pre-assigned Workspaces
+- `C` - Chrome
+- `S` - Slack
+- `M` - Messages/WhatsApp
+- `F` - Figma
+- `P` - Postman
+- `O` - Spotify
+
+## 🔧 Configuration Files
 
 ```
-.
-├── hypr/          # Hyprland configuration
-├── waybar/        # Status bar configuration
-├── rofi/          # Application launcher
-├── ghostty/       # Terminal configuration
-├── nvim/          # Neovim configuration
-├── tmux/          # Tmux configuration
-├── zsh/           # Zsh configuration
-├── git/           # Git configuration
-└── install.sh     # Installation script
+├── aerospace/     # macOS window manager
+├── ghostty/        # Terminal emulator
+├── hypr/           # Arch Linux compositor
+├── nvim/           # Neovim config
+├── tmux/           # Tmux config
+├── zsh/            # Shell config
+├── git/            # Git config
+└── scripts/        # Helper scripts
+    ├── nvim-tab              # Smart nvim/tmux integration
+    └── github-dev-sync.sh    # Sync GitHub projects
 ```
 
-## Troubleshooting
+## 🔄 Project Sync
 
-### Hyprland Won't Start
-- Check logs: `journalctl -b -u seatd`
-- Ensure your user is in the `video` group: `sudo usermod -aG video $USER`
+Keep your ~/dev folder synchronized across devices:
 
-### Audio Issues
-- Check PipeWire status: `systemctl --user status pipewire`
-- Use `pavucontrol` for audio management
+```bash
+# First time setup
+dev-sync
 
-### Ghostty Not Found
-- Make sure AUR helper installed correctly
-- Try manual installation: `yay -S ghostty-bin`
+# This will:
+# 1. Clone all your GitHub repos
+# 2. Organize by type (experiments/, work/, forks/)
+# 3. Update existing repos
+```
 
-## Credits
+## 🎨 Visual Experience
 
-Inspired by ThePrimagen's setup and the Arch Linux community.
+### Arch Linux
+- **Display Manager**: SDDM with Sugar Candy theme (beautiful login screen)
+- **Compositor**: Hyprland with smooth animations
+- **Bar**: Waybar with system info
+- **Launcher**: Rofi for app launching
+- **Notifications**: Mako
+
+### macOS
+- **Window Manager**: Aerospace (no gaps, clean tiling)
+- **Terminal**: Ghostty (GPU-accelerated)
+- **Font Rendering**: Matches Linux with ligatures enabled
+
+## 🛠️ Post-Install
+
+### Both Platforms
+1. Restart terminal or run `source ~/.zshrc`
+2. Install tmux plugins: Press `Ctrl+Space` then `I` in tmux
+3. Install Neovim plugins: Open nvim and let it auto-install
+
+### Arch Linux Specific
+1. Reboot after installation
+2. Login via SDDM (graphical login)
+3. Hyprland starts automatically
+
+### macOS Specific
+1. Start Aerospace: `aerospace`
+2. Grant accessibility permissions when prompted
+
+## 📝 Customization
+
+### Adding New Apps to Workspaces
+
+Edit workspace assignments:
+- **macOS**: `~/.aerospace.toml`
+- **Arch**: `~/.config/hypr/hyprland.conf`
+
+### Changing Keybindings
+
+Both configs use the same keybinding structure, just update both files to keep them in sync.
+
+## 🚨 Troubleshooting
+
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues and solutions.
+
+### Quick Fixes
+- **Arch audio issues**: Run `fix-audio`
+- **Git not configured**: Run `./scripts/setup-git-config.sh`
+- **Aerospace not working**: Check System Preferences > Security & Privacy
+
+## 📖 Documentation
+
+- [QUICK-INSTALL.md](QUICK-INSTALL.md) - Speed run guide
+- [ARCH-PREREQUISITES.md](ARCH-PREREQUISITES.md) - Pre-install requirements
+- [MANUAL-INSTALL-STEPS.md](MANUAL-INSTALL-STEPS.md) - Step-by-step manual installation
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues and fixes
+
+## 🔗 Credits
+
+- Window Management inspired by ThePrimeagen's workflow
+- Neovim config based on ThePrimeagen's setup
+- Hyprland config optimized for productivity
