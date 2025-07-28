@@ -1,0 +1,184 @@
+# Universal Package Mapping
+# Maps package names between macOS (Homebrew) and Arch Linux (pacman/AUR)
+
+cli_tools:
+  # Version control
+  git:
+    macos: git
+    arch: git
+  gh:
+    macos: gh
+    arch: github-cli
+  lazygit:
+    macos: lazygit
+    arch: lazygit
+
+  # Text editors and terminal
+  neovim:
+    macos: neovim
+    arch: neovim
+  neovim-remote:
+    macos: neovim-remote
+    arch: neovim-remote
+  tmux:
+    macos: tmux
+    arch: tmux
+
+  # Shell and utilities
+  zsh:
+    macos: zsh
+    arch: zsh
+  stow:
+    macos: stow
+    arch: stow
+  curl:
+    macos: curl
+    arch: curl
+  wget:
+    macos: wget
+    arch: wget
+  jq:
+    macos: jq
+    arch: jq
+
+  # Modern CLI replacements
+  ripgrep:
+    macos: ripgrep
+    arch: ripgrep
+  fd:
+    macos: fd
+    arch: fd
+  fzf:
+    macos: fzf
+    arch: fzf
+  bat:
+    macos: bat
+    arch: bat
+
+  # System monitoring
+  htop:
+    macos: htop
+    arch: htop
+  btop:
+    macos: btop
+    arch: btop
+
+  # Python
+  python:
+    macos: python@3.11
+    arch: python
+  pipx:
+    macos: pipx
+    arch: python-pipx
+
+gui_apps:
+  # Terminal
+  ghostty:
+    macos: 
+      type: cask
+      name: ghostty
+      fallback_url: https://ghostty.org
+    arch:
+      type: aur
+      name: ghostty-bin
+
+  # Window management
+  aerospace:
+    macos:
+      type: cask
+      tap: nikitabobko/tap
+      name: aerospace
+    arch:
+      type: config_only  # Use Hyprland on Arch
+
+fonts:
+  jetbrains-mono:
+    macos:
+      type: cask
+      name: font-jetbrains-mono-nerd-font
+    arch:
+      type: pacman
+      name: ttf-jetbrains-mono-nerd
+  
+  fira-code:
+    macos:
+      type: cask
+      name: font-fira-code-nerd-font
+    arch:
+      type: pacman
+      name: ttf-firacode-nerd
+
+python_tools:
+  - poetry
+  - black
+  - ruff
+  - ipython
+
+npm_global:
+  - pnpm
+  - yarn
+  - typescript
+  - prettier
+  - eslint
+
+# Arch-specific packages (not needed on macOS)
+arch_only:
+  # Display server and compositor
+  - hyprland
+  - xdg-desktop-portal-hyprland
+  - xorg-xwayland
+  
+  # Audio
+  - pipewire
+  - wireplumber
+  - pipewire-pulse
+  - pipewire-alsa
+  - pipewire-jack
+  - pavucontrol
+  
+  # System utilities
+  - polkit-kde-agent
+  - brightnessctl
+  - playerctl
+  - pamixer
+  
+  # Screenshot and clipboard
+  - grim
+  - slurp
+  - wl-clipboard
+  - swappy
+  - grimblast-git
+  
+  # UI components
+  - waybar
+  - rofi-wayland
+  - mako
+  - swww
+  - swaylock-effects
+  - wlogout
+  
+  # File management
+  - thunar
+  - thunar-archive-plugin
+  - file-roller
+  - tumbler
+  - gvfs
+  - gvfs-mtp
+  
+  # Bluetooth
+  - bluez
+  - bluez-utils
+  - blueman
+  
+  # Network
+  - network-manager-applet
+  
+  # Fonts and themes
+  - noto-fonts
+  - noto-fonts-cjk
+  - noto-fonts-emoji
+  - ttf-font-awesome
+  - ttf-nerd-fonts-symbols
+  
+  # Browser (for Puppeteer)
+  - chromium

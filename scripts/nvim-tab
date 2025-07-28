@@ -1,13 +1,46 @@
 #!/bin/bash
-# Linux version of nvim-tab helper script
-# Works with Ghostty and other Linux terminals
+# Cross-platform nvim-tab helper script
+# Works with Ghostty on both macOS and Linux
 
 # Get the file path argument
 FILE_PATH="$1"
 
 # Function to check if we're in a graphical environment
 is_graphical() {
-    [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS is always graphical
+        return 0
+    else
+        # Linux - check for display server
+        [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]
+    fi
+}
+
+# Function to open terminal with command
+open_terminal_with_nvim() {
+    local nvim_cmd="$1"
+    
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        if [ -d "/Applications/Ghostty.app" ]; then
+            open -a Ghostty --args -e $nvim_cmd
+        elif [ -d "/Applications/iTerm.app" ]; then
+            osascript -e "tell application \"iTerm\" to create window with default profile command \"$nvim_cmd\""
+        else
+            osascript -e "tell application \"Terminal\" to do script \"$nvim_cmd\""
+        fi
+    else
+        # Linux
+        if command -v ghostty &> /dev/null; then
+            ghostty -e $nvim_cmd &
+        elif command -v alacritty &> /dev/null; then
+            alacritty -e $nvim_cmd &
+        elif command -v kitty &> /dev/null; then
+            kitty $nvim_cmd &
+        else
+            xterm -e $nvim_cmd &
+        fi
+    fi
 }
 
 # If no file path provided, just open nvim
@@ -52,17 +85,8 @@ if command -v nvr &> /dev/null; then
             # Already in a terminal
             nvim --listen "$SERVER_NAME" "$FILE_PATH"
         elif is_graphical; then
-            # In graphical environment, open in default terminal
-            if command -v ghostty &> /dev/null; then
-                ghostty -e nvim --listen "$SERVER_NAME" "$FILE_PATH" &
-            elif command -v alacritty &> /dev/null; then
-                alacritty -e nvim --listen "$SERVER_NAME" "$FILE_PATH" &
-            elif command -v kitty &> /dev/null; then
-                kitty nvim --listen "$SERVER_NAME" "$FILE_PATH" &
-            else
-                # Fallback to xterm
-                xterm -e nvim --listen "$SERVER_NAME" "$FILE_PATH" &
-            fi
+            # In graphical environment, open in terminal
+            open_terminal_with_nvim "nvim --listen $SERVER_NAME \"$FILE_PATH\""
         else
             # No graphical environment, just run nvim
             nvim --listen "$SERVER_NAME" "$FILE_PATH"
@@ -73,15 +97,7 @@ else
     if [ -t 0 ]; then
         nvim "$FILE_PATH"
     elif is_graphical; then
-        if command -v ghostty &> /dev/null; then
-            ghostty -e nvim "$FILE_PATH" &
-        elif command -v alacritty &> /dev/null; then
-            alacritty -e nvim "$FILE_PATH" &
-        elif command -v kitty &> /dev/null; then
-            kitty nvim "$FILE_PATH" &
-        else
-            xterm -e nvim "$FILE_PATH" &
-        fi
+        open_terminal_with_nvim "nvim \"$FILE_PATH\""
     else
         nvim "$FILE_PATH"
     fi

@@ -95,8 +95,15 @@ export LC_ALL='en_US.UTF-8'
 
 # NVM Configuration
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+if [[ "$OSTYPE" == "darwin"* ]] && command -v brew &> /dev/null && [ -f "$(brew --prefix)/opt/nvm/nvm.sh" ]; then
+    # macOS with Homebrew NVM
+    source "$(brew --prefix)/opt/nvm/nvm.sh"
+    [ -s "$(brew --prefix)/opt/nvm/etc/bash_completion.d/nvm" ] && source "$(brew --prefix)/opt/nvm/etc/bash_completion.d/nvm"
+else
+    # Linux or manual NVM installation
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+fi
 
 # Automatically switch node versions when entering directory with .nvmrc
 autoload -U add-zsh-hook

@@ -6,7 +6,17 @@ export PATH="$HOME/.local/bin:$PATH"
 
 # Puppeteer configuration (for headless Chrome)
 export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-export PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS - check common Chrome locations
+    if [ -f "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]; then
+        export PUPPETEER_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+    elif [ -f "/Applications/Chromium.app/Contents/MacOS/Chromium" ]; then
+        export PUPPETEER_EXECUTABLE_PATH="/Applications/Chromium.app/Contents/MacOS/Chromium"
+    fi
+else
+    # Linux
+    export PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+fi
 
 # Default editor
 export EDITOR="/usr/local/bin/nvim-tab"
