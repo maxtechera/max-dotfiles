@@ -1,5 +1,15 @@
 # Hyprland Quick Start Guide
 
+## ⚠️ Important: Keybinding Conflicts
+
+The current config uses **Alt** as the modifier (to match macOS), but this conflicts with many Linux apps!
+
+### To Switch to Linux Standard Keys (Recommended):
+```bash
+~/max-dotfiles/scripts/switch-hypr-keys.sh
+```
+Choose option 2 for Super (Windows key) - the Linux standard.
+
 ## 🚨 Essential Key Bindings
 
 ### Window Management
