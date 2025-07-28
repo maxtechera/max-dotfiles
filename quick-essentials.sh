@@ -40,6 +40,7 @@ echo -e "${GREEN}╚════════════════════
 
 echo -e "\n${YELLOW}You now have a working Hyprland desktop!${NC}"
 echo -e "${YELLOW}To install additional apps later:${NC}"
+echo "• Claude Code: yay -S claude-code"
 echo "• VS Code: yay -S visual-studio-code-bin"
 echo "• Spotify: yay -S spotify"
 echo "• Slack: yay -S slack-desktop"

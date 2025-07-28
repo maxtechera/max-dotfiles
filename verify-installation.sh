@@ -109,6 +109,7 @@ check_package wireplumber
 
 echo -e "\n${PURPLE}[3/7] Development Tools${NC}"
 echo "================================"
+check_command claude command
 check_command nvm command
 check_command node command
 check_command npm command

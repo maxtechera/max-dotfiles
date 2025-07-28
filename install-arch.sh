@@ -261,6 +261,7 @@ else
         ESSENTIAL_AUR=(
             visual-studio-code-bin
             spotify
+            claude-code
         )
         
         # Optional AUR packages (slower, larger)
