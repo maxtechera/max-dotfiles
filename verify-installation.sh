@@ -103,7 +103,7 @@ check_package waybar
 check_package rofi-wayland
 check_package mako
 check_package sddm
-check_package ghostty-bin
+check_package ghostty
 check_package pipewire
 check_package wireplumber
 

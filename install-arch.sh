@@ -235,31 +235,73 @@ if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then
 fi
 echo -e "${GREEN}✓ Fonts ready${NC}"
 
-# Install Ghostty from AUR
+# Install Ghostty
 step "Installing Ghostty..."
-install_aur_if_missing "ghostty-bin"
+if ! check_installed "ghostty"; then
+    echo -e "${YELLOW}Installing Ghostty from official repository...${NC}"
+    sudo pacman -S --needed --noconfirm ghostty
+else
+    echo -e "${GREEN}✓ Ghostty already installed${NC}"
+fi
 
 # Install AUR packages
-step "Installing AUR packages..."
-AUR_PACKAGES=(
-    grimblast-git spotify slack-desktop zoom
-    visual-studio-code-bin postman-bin figma-linux-bin
-    1password 1password-cli
-)
+step "Installing AUR packages (optional)..."
 
-echo -e "${YELLOW}Checking AUR packages...${NC}"
-for pkg in "${AUR_PACKAGES[@]}"; do
-    if ! check_aur_installed "$pkg"; then
-        read -p "Install $pkg? (y/n) [y]: " -n 1 -r REPLY
-        REPLY=${REPLY:-y}
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            yay -S --needed --noconfirm "$pkg" 2>/dev/null || echo "  ! Failed to install $pkg"
-        fi
+# Check if user wants to skip AUR packages
+if [ "$1" == "--skip-aur" ]; then
+    echo -e "${YELLOW}Skipping AUR packages as requested${NC}"
+else
+    echo -e "${YELLOW}AUR packages can take 10-30 minutes to compile${NC}"
+    read -p "Install AUR packages now? (y/n) [y]: " -n 1 -r SKIP_AUR
+    SKIP_AUR=${SKIP_AUR:-y}
+    echo
+    
+    if [[ $SKIP_AUR =~ ^[Yy]$ ]]; then
+        # Essential AUR packages (faster to install)
+        ESSENTIAL_AUR=(
+            visual-studio-code-bin
+            spotify
+        )
+        
+        # Optional AUR packages (slower, larger)
+        OPTIONAL_AUR=(
+            slack-desktop
+            zoom
+            postman-bin
+            figma-linux-bin
+            1password
+            1password-cli
+            grimblast-git
+        )
+        
+        echo -e "\n${YELLOW}Installing essential AUR packages...${NC}"
+        for pkg in "${ESSENTIAL_AUR[@]}"; do
+            if ! check_aur_installed "$pkg"; then
+                echo -e "${YELLOW}Installing $pkg...${NC}"
+                yay -S --needed --noconfirm "$pkg" || echo -e "${YELLOW}! Failed to install $pkg${NC}"
+            else
+                echo -e "${GREEN}✓ $pkg already installed${NC}"
+            fi
+        done
+        
+        echo -e "\n${YELLOW}Optional AUR packages available:${NC}"
+        for pkg in "${OPTIONAL_AUR[@]}"; do
+            if ! check_aur_installed "$pkg"; then
+                read -p "Install $pkg? (y/n) [n]: " -n 1 -r REPLY
+                REPLY=${REPLY:-n}
+                echo
+                if [[ $REPLY =~ ^[Yy]$ ]]; then
+                    yay -S --needed --noconfirm "$pkg" || echo -e "${YELLOW}! Failed to install $pkg${NC}"
+                fi
+            else
+                echo -e "${GREEN}✓ $pkg already installed${NC}"
+            fi
+        done
     else
-        echo -e "${GREEN}✓ $pkg already installed${NC}"
+        echo -e "${YELLOW}Skipping AUR packages. You can install them later with:${NC}"
+        echo "yay -S visual-studio-code-bin spotify slack-desktop"
     fi
-done
+fi
 
 # Clone and setup dotfiles
 step "Setting up dotfiles..."

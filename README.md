@@ -12,6 +12,11 @@ A unified configuration that provides an identical command-line and window manag
 curl -sSL https://raw.githubusercontent.com/maxtechera/max-dotfiles/main/fresh-arch-setup.sh | bash
 ```
 
+**💡 Speed Tips:**
+- Add `--skip-aur` to skip AUR packages (saves 10-30 minutes)
+- AUR packages compile from source, which is why they're slow
+- You can install them later individually
+
 ### Option B: Step-by-Step
 ```bash
 # 1. Boot Arch USB and connect WiFi
