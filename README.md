@@ -195,6 +195,7 @@ The verification script checks:
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues and solutions.
 
 ### Quick Fixes
+- **NVM/Node not found**: Run `source ~/.zshrc` or `./scripts/fix-nvm.sh`
 - **Arch audio issues**: Run `fix-audio`
 - **Git not configured**: Run `./scripts/setup-git-config.sh`
 - **Aerospace not working**: Check System Preferences > Security & Privacy

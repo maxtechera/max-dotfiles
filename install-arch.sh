@@ -436,17 +436,35 @@ if [ ! -d "$HOME/.nvm" ]; then
     echo -e "${YELLOW}Installing NVM...${NC}"
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
     
-    # Install Node
+    # Source NVM immediately
     export NVM_DIR="$HOME/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+    
+    echo -e "${YELLOW}Installing Node.js LTS...${NC}"
     nvm install --lts
     nvm use --lts
     nvm alias default node
     
+    # Verify installation
+    echo -e "${GREEN}✓ Node.js $(node --version) installed${NC}"
+    
     # Install global npm packages
+    echo -e "${YELLOW}Installing global npm packages...${NC}"
     npm install -g pnpm yarn typescript prettier eslint
 else
     echo -e "${GREEN}✓ NVM already installed${NC}"
+    # Source it anyway to ensure it's available
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    
+    # Check if node is installed
+    if ! command -v node &> /dev/null; then
+        echo -e "${YELLOW}Node not found, installing LTS...${NC}"
+        nvm install --lts
+        nvm use --lts
+        nvm alias default node
+    fi
 fi
 
 # Set up Python tools
@@ -545,3 +563,11 @@ echo -e "  ${GREEN}Alt + H/J/K/L${NC} - Focus windows"
 echo -e "  ${GREEN}Alt + [1-9,A-Z]${NC} - Switch workspace"
 echo -e "\n${YELLOW}Workspaces:${NC}"
 echo -e "  ${GREEN}C${NC} - Chrome  ${GREEN}S${NC} - Slack  ${GREEN}F${NC} - Figma"
+
+# Important note about shell configuration
+echo -e "\n${YELLOW}IMPORTANT: To use Node.js/NVM:${NC}"
+echo -e "1. Open a new terminal, OR"
+echo -e "2. Run: ${GREEN}source ~/.zshrc${NC}"
+echo
+echo -e "${YELLOW}If NVM/Node still not working:${NC}"
+echo -e "Run: ${GREEN}./scripts/fix-nvm.sh${NC}"
