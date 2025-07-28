@@ -1,0 +1,21 @@
+# Temporary files
+*.tmp
+*~
+*.swp
+*.swo
+.DS_Store
+
+# Backup files
+*.backup
+*.bak
+
+# Cache directories
+.cache/
+__pycache__/
+
+# IDE files
+.vscode/
+.idea/
+
+# System files
+Thumbs.db

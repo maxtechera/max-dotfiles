@@ -1,0 +1,68 @@
+# Ghostty Configuration
+# Modern terminal setup
+
+# Font
+font-family = JetBrainsMono Nerd Font
+font-size = 14
+font-feature = -liga
+font-feature = -calt
+
+# Theme (Nord inspired)
+background = #2e3440
+foreground = #d8dee9
+cursor-color = #81a1c1
+
+# Colors
+palette = 0=#3b4252
+palette = 1=#bf616a
+palette = 2=#a3be8c
+palette = 3=#ebcb8b
+palette = 4=#81a1c1
+palette = 5=#b48ead
+palette = 6=#88c0d0
+palette = 7=#e5e9f0
+palette = 8=#4c566a
+palette = 9=#bf616a
+palette = 10=#a3be8c
+palette = 11=#ebcb8b
+palette = 12=#81a1c1
+palette = 13=#b48ead
+palette = 14=#8fbcbb
+palette = 15=#eceff4
+
+# Window
+window-decoration = false
+window-padding-x = 10
+window-padding-y = 10
+window-save-state = never
+
+# Opacity
+background-opacity = 0.95
+background-blur-radius = 20
+
+# Scrollback
+scrollback-limit = 10000
+
+# Cursor
+cursor-style = block
+cursor-style-blink = false
+
+# Mouse
+mouse-hide-while-typing = true
+
+# Shell
+shell-integration = detect
+
+# Copy on select
+copy-on-select = clipboard
+
+# Keybindings
+keybind = ctrl+shift+c=copy_to_clipboard
+keybind = ctrl+shift+v=paste_from_clipboard
+keybind = ctrl+shift+n=new_window
+keybind = ctrl+shift+t=new_tab
+keybind = ctrl+shift+w=close_surface
+keybind = ctrl+shift+q=quit
+keybind = ctrl+shift+equal=increase_font_size:1
+keybind = ctrl+shift+minus=decrease_font_size:1
+keybind = ctrl+shift+0=reset_font_size

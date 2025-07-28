@@ -1,0 +1,121 @@
+* {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 13px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: rgba(46, 52, 64, 0.9);
+    color: #d8dee9;
+}
+
+#workspaces button {
+    padding: 0 5px;
+    background: transparent;
+    color: #d8dee9;
+    border-bottom: 3px solid transparent;
+}
+
+#workspaces button:hover {
+    background: rgba(76, 86, 106, 0.5);
+    box-shadow: inherit;
+    border-bottom: 3px solid #81a1c1;
+}
+
+#workspaces button.active {
+    background: rgba(76, 86, 106, 0.5);
+    border-bottom: 3px solid #88c0d0;
+}
+
+#workspaces button.urgent {
+    background-color: #bf616a;
+}
+
+#clock,
+#battery,
+#cpu,
+#memory,
+#temperature,
+#network,
+#pulseaudio,
+#tray {
+    padding: 0 10px;
+    margin: 0 5px;
+}
+
+#clock {
+    background-color: rgba(136, 192, 208, 0.2);
+    color: #88c0d0;
+}
+
+#battery {
+    background-color: rgba(163, 190, 140, 0.2);
+    color: #a3be8c;
+}
+
+#battery.charging {
+    background-color: rgba(163, 190, 140, 0.3);
+}
+
+#battery.warning:not(.charging) {
+    background-color: rgba(235, 203, 139, 0.2);
+    color: #ebcb8b;
+}
+
+#battery.critical:not(.charging) {
+    background-color: rgba(191, 97, 106, 0.2);
+    color: #bf616a;
+}
+
+#cpu {
+    background-color: rgba(129, 161, 193, 0.2);
+    color: #81a1c1;
+}
+
+#memory {
+    background-color: rgba(180, 142, 173, 0.2);
+    color: #b48ead;
+}
+
+#temperature {
+    background-color: rgba(143, 188, 187, 0.2);
+    color: #8fbcbb;
+}
+
+#temperature.critical {
+    background-color: rgba(191, 97, 106, 0.2);
+    color: #bf616a;
+}
+
+#network {
+    background-color: rgba(94, 129, 172, 0.2);
+    color: #5e81ac;
+}
+
+#network.disconnected {
+    background-color: rgba(191, 97, 106, 0.2);
+    color: #bf616a;
+}
+
+#pulseaudio {
+    background-color: rgba(235, 203, 139, 0.2);
+    color: #ebcb8b;
+}
+
+#pulseaudio.muted {
+    background-color: rgba(76, 86, 106, 0.2);
+    color: #4c566a;
+}
+
+#tray {
+    background-color: rgba(46, 52, 64, 0.5);
+}
+
+tooltip {
+    background: rgba(46, 52, 64, 0.95);
+    border: 1px solid #4c566a;
+}
+
+tooltip label {
+    color: #d8dee9;
+}
