@@ -166,6 +166,24 @@ Edit workspace assignments:
 
 Both configs use the same keybinding structure, just update both files to keep them in sync.
 
+## ✅ Verify Installation
+
+After installation, verify everything is working:
+
+```bash
+# Run comprehensive verification
+./verify-installation.sh
+
+# Or test just Hyprland
+./test-hyprland.sh
+```
+
+The verification script checks:
+- All packages installed correctly
+- Services are enabled
+- Configuration files are in place
+- Key binaries are available
+
 ## 🚨 Troubleshooting
 
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues and solutions.
@@ -174,6 +192,7 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for common issues and solutions.
 - **Arch audio issues**: Run `fix-audio`
 - **Git not configured**: Run `./scripts/setup-git-config.sh`
 - **Aerospace not working**: Check System Preferences > Security & Privacy
+- **Missing packages**: Run `./verify-installation.sh` to see what's missing
 
 ## 📖 Documentation
 
