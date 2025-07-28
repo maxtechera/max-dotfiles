@@ -1,40 +1,32 @@
 # Zsh Configuration
-# Performance optimized setup
-
-# Enable Powerlevel10k instant prompt
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
+# Matching macOS setup for Arch Linux
 
 # Path to oh-my-zsh
 export ZSH="$HOME/.oh-my-zsh"
 
-# Theme
+# Theme (same as macOS)
 ZSH_THEME="robbyrussell"
 
-# Plugins
+# Plugins (matching macOS setup)
 plugins=(
     git
     zsh-autosuggestions
-    zsh-syntax-highlighting
-    docker
-    docker-compose
-    kubectl
-    terraform
-    aws
-    fzf
-    z
 )
 
 source $ZSH/oh-my-zsh.sh
 
 # User configuration
 
-# Aliases
-alias ls='eza --icons'
-alias ll='eza -la --icons'
-alias la='eza -a --icons'
-alias lt='eza --tree --icons'
+# Aliases - matching macOS setup
+alias ls='ls -G'
+alias ll='ls -lh'
+alias la='ls -lAh'
+alias l='ls -lah'
+alias lsa='ls -lah'
+alias md='mkdir -p'
+alias rd='rmdir'
+
+# Modern CLI tools (optional but recommended)
 alias cat='bat'
 alias vim='nvim'
 alias vi='nvim'
@@ -43,27 +35,18 @@ alias lg='lazygit'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
-alias grep='rg'
-alias find='fd'
-alias ps='procs'
-alias top='btop'
-alias htop='btop'
+alias .....='../../../../..'
+alias ......='../../../../../..'
+alias grep='grep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox}'
+alias egrep='egrep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox}'
+alias fgrep='fgrep --color=auto --exclude-dir={.bzr,CVS,.git,.hg,.svn,.idea,.tox}'
 
-# Git aliases
-alias gs='git status'
-alias ga='git add'
-alias gc='git commit'
-alias gp='git push'
-alias gpl='git pull'
-alias gco='git checkout'
-alias gcb='git checkout -b'
-alias glog='git log --oneline --graph --decorate'
+# oh-my-zsh git plugin provides all git aliases automatically
+# Key ones: gs, ga, gc, gp, gpl, gco, gcb, glog, etc.
 
-# Docker aliases
-alias d='docker'
-alias dc='docker-compose'
-alias dps='docker ps'
-alias dpsa='docker ps -a'
+# Additional aliases
+alias nvt='/usr/local/bin/nvim-tab'
+alias dev-sync='~/.dotfiles/scripts/github-dev-sync.sh'
 
 # Tmux aliases
 alias ta='tmux attach -t'
@@ -104,20 +87,47 @@ export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
 # Environment variables
-export EDITOR='nvim'
+export EDITOR='/usr/local/bin/nvim-tab'
 export VISUAL='nvim'
 export PAGER='less'
 export LANG='en_US.UTF-8'
 export LC_ALL='en_US.UTF-8'
 
-# Go
-export GOPATH="$HOME/go"
-export PATH="$PATH:$GOPATH/bin"
+# NVM Configuration
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
-# Rust
-export PATH="$PATH:$HOME/.cargo/bin"
+# Automatically switch node versions when entering directory with .nvmrc
+autoload -U add-zsh-hook
+load-nvmrc() {
+  local node_version="$(nvm version)"
+  local nvmrc_path="$(nvm_find_nvmrc)"
 
-# Node
+  if [ -n "$nvmrc_path" ]; then
+    local nvmrc_node_version=$(nvm version "$(cat "${nvmrc_path}")")
+
+    if [ "$nvmrc_node_version" = "N/A" ]; then
+      nvm install
+    elif [ "$nvmrc_node_version" != "$node_version" ]; then
+      nvm use
+    fi
+  elif [ "$node_version" != "$(nvm version default)" ]; then
+    echo "Reverting to nvm default version"
+    nvm use default
+  fi
+}
+add-zsh-hook chpwd load-nvmrc
+load-nvmrc
+
+# pnpm
+export PNPM_HOME="$HOME/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+
+# Python (pipx)
 export PATH="$PATH:$HOME/.local/bin"
 
 # History

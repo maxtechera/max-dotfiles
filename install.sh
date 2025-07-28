@@ -36,6 +36,7 @@ sudo pacman -S --needed --noconfirm \
     base-devel \
     git \
     neovim \
+    neovim-remote \
     tmux \
     zsh \
     stow \
@@ -46,9 +47,6 @@ sudo pacman -S --needed --noconfirm \
     fd \
     fzf \
     bat \
-    eza \
-    zoxide \
-    starship \
     htop \
     btop \
     neofetch \
@@ -59,13 +57,10 @@ sudo pacman -S --needed --noconfirm \
     man-db \
     man-pages \
     openssh \
+    python \
     python-pip \
-    nodejs \
-    npm \
-    go \
-    rust \
-    docker \
-    docker-compose
+    python-pipx \
+    chromium
 
 # Install Hyprland and dependencies
 echo -e "\n${YELLOW}[4/8] Installing Hyprland...${NC}"
@@ -139,6 +134,14 @@ for config in hypr waybar rofi ghostty nvim tmux zsh git; do
     fi
 done
 
+# Also backup existing dotfiles
+for dotfile in .zshrc .zshenv .tmux.conf .gitconfig; do
+    if [ -e "$HOME/$dotfile" ]; then
+        echo "Backing up existing $dotfile..."
+        mv "$HOME/$dotfile" "$HOME/$dotfile.backup.$(date +%Y%m%d%H%M%S)"
+    fi
+done
+
 # Clone this repository to ~/.dotfiles
 if [ -d "$DOTFILES_DIR" ]; then
     echo "Dotfiles already exist, backing up..."
@@ -148,6 +151,11 @@ fi
 # Copy current directory to dotfiles location
 cp -r "$(pwd)" "$DOTFILES_DIR"
 cd "$DOTFILES_DIR"
+
+# Install nvim-tab and dev-sync scripts
+echo -e "\n${GREEN}Installing custom scripts...${NC}"
+sudo install -m 755 scripts/nvim-tab /usr/local/bin/nvim-tab
+sudo install -m 755 scripts/github-dev-sync.sh /usr/local/bin/dev-sync
 
 # Use GNU Stow to symlink configs
 echo -e "\n${GREEN}Creating symlinks...${NC}"
@@ -171,8 +179,6 @@ echo -e "\n${GREEN}Enabling services...${NC}"
 systemctl --user enable pipewire
 systemctl --user enable wireplumber
 sudo systemctl enable bluetooth
-sudo systemctl enable docker
-sudo usermod -aG docker $USER
 
 # Install Oh My Zsh
 echo -e "\n${GREEN}Installing Oh My Zsh...${NC}"
@@ -195,6 +201,28 @@ if [ ! -d "$HOME/.config/nvim" ]; then
     git clone https://github.com/LazyVim/starter ~/.config/nvim
     rm -rf ~/.config/nvim/.git
 fi
+
+# Install NVM (Node Version Manager)
+echo -e "\n${GREEN}Installing NVM...${NC}"
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+
+# Source NVM and install latest LTS Node
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+nvm install --lts
+nvm use --lts
+nvm alias default node
+
+# Install global npm packages
+echo -e "\n${GREEN}Installing global npm packages...${NC}"
+npm install -g pnpm yarn typescript prettier eslint
+
+# Set up Python with pipx for global tools
+echo -e "\n${GREEN}Setting up Python tools...${NC}"
+pipx install poetry
+pipx install black
+pipx install ruff
+pipx install ipython
 
 echo -e "\n${GREEN}╔════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║        Installation Complete!          ║${NC}"

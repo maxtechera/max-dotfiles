@@ -1,0 +1,88 @@
+#!/bin/bash
+# Linux version of nvim-tab helper script
+# Works with Ghostty and other Linux terminals
+
+# Get the file path argument
+FILE_PATH="$1"
+
+# Function to check if we're in a graphical environment
+is_graphical() {
+    [ -n "$DISPLAY" ] || [ -n "$WAYLAND_DISPLAY" ]
+}
+
+# If no file path provided, just open nvim
+if [ -z "$FILE_PATH" ]; then
+    nvim
+    exit 0
+fi
+
+# Convert to absolute path
+FILE_PATH=$(realpath "$FILE_PATH" 2>/dev/null || echo "$FILE_PATH")
+
+# Check if nvr is available
+if command -v nvr &> /dev/null; then
+    # Get server list
+    SERVERS=$(nvr --serverlist 2>/dev/null)
+    
+    if [ -n "$SERVERS" ]; then
+        # Open in a new tab in the existing instance
+        nvr --remote-tab "$FILE_PATH"
+        
+        # Small delay to ensure file is loaded
+        sleep 0.1
+        
+        # Switch to the new tab (Neovim command)
+        nvr -c ':tablast'
+    else
+        # No server running, check if we have a stored server
+        if [ -f ~/.nvim-server ]; then
+            SERVER=$(cat ~/.nvim-server)
+            # Try to use the stored server
+            if nvr --servername "$SERVER" --remote-tab "$FILE_PATH" 2>/dev/null; then
+                exit 0
+            fi
+        fi
+        
+        # Start new Neovim instance with server
+        SERVER_NAME="/tmp/nvim-$$"
+        echo "$SERVER_NAME" > ~/.nvim-server
+        
+        # Open with server mode
+        if [ -t 0 ]; then
+            # Already in a terminal
+            nvim --listen "$SERVER_NAME" "$FILE_PATH"
+        elif is_graphical; then
+            # In graphical environment, open in default terminal
+            if command -v ghostty &> /dev/null; then
+                ghostty -e nvim --listen "$SERVER_NAME" "$FILE_PATH" &
+            elif command -v alacritty &> /dev/null; then
+                alacritty -e nvim --listen "$SERVER_NAME" "$FILE_PATH" &
+            elif command -v kitty &> /dev/null; then
+                kitty nvim --listen "$SERVER_NAME" "$FILE_PATH" &
+            else
+                # Fallback to xterm
+                xterm -e nvim --listen "$SERVER_NAME" "$FILE_PATH" &
+            fi
+        else
+            # No graphical environment, just run nvim
+            nvim --listen "$SERVER_NAME" "$FILE_PATH"
+        fi
+    fi
+else
+    # Fallback to regular nvim
+    if [ -t 0 ]; then
+        nvim "$FILE_PATH"
+    elif is_graphical; then
+        if command -v ghostty &> /dev/null; then
+            ghostty -e nvim "$FILE_PATH" &
+        elif command -v alacritty &> /dev/null; then
+            alacritty -e nvim "$FILE_PATH" &
+        elif command -v kitty &> /dev/null; then
+            kitty nvim "$FILE_PATH" &
+        else
+            xterm -e nvim "$FILE_PATH" &
+        fi
+    else
+        nvim "$FILE_PATH"
+    fi
+fi

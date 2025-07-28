@@ -1,0 +1,23 @@
+# Project Manifest
+# Defines all your projects and their setup requirements
+# Run: ./sync-projects.sh to clone/update all projects
+
+projects:
+  # Example project structure
+  example-project:
+    repo: git@github.com:username/example.git
+    path: experiments/example
+    setup:
+      - npm install
+      - cp .env.example .env
+    post_clone_message: "Remember to update .env with your API keys"
+  
+  # Add your projects here following this pattern:
+  # project-name:
+  #   repo: git@github.com:owner/repo.git
+  #   path: relative/path/from/dev
+  #   branch: main  # optional, defaults to main
+  #   setup:  # optional setup commands
+  #     - npm install
+  #     - make setup
+  #   post_clone_message: "Optional message after cloning"
