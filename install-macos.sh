@@ -54,10 +54,7 @@ echo -e "\n${YELLOW}[3/8] Installing applications...${NC}"
 # Install Ghostty if not already installed
 if ! ls /Applications/Ghostty.app &> /dev/null; then
     echo "Installing Ghostty..."
-    brew install --cask ghostty || {
-        echo -e "${YELLOW}Ghostty not in Homebrew yet. Download from: https://ghostty.org${NC}"
-        echo -e "${YELLOW}After installing, run this script again.${NC}"
-    }
+    brew install --cask ghostty
 fi
 
 # Install Aerospace if not already installed
