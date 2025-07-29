@@ -100,7 +100,7 @@ echo -e "\n${PURPLE}[2/7] Window Manager & Desktop${NC}"
 echo "================================"
 check_package hyprland
 check_package waybar
-check_package rofi-wayland
+check_package fuzzel
 check_package mako
 check_package sddm
 check_package ghostty

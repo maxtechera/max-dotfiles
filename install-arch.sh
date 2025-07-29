@@ -308,8 +308,8 @@ fi
 step "Setting up dotfiles..."
 DOTFILES_DIR="$HOME/.dotfiles"
 
-# Handle existing configs
-CONFIGS=(hypr waybar rofi ghostty nvim tmux zsh git)
+# Handle existing configs (removed rofi from list)
+CONFIGS=(hypr waybar ghostty nvim tmux zsh git)
 for config in "${CONFIGS[@]}"; do
     if [ -e "$HOME/.config/$config" ] && [ ! -L "$HOME/.config/$config" ]; then
         echo -e "${YELLOW}Found existing $config config${NC}"
@@ -365,7 +365,7 @@ done
 
 # Use GNU Stow to symlink configs
 echo -e "${YELLOW}Creating symlinks...${NC}"
-for dir in hypr waybar rofi ghostty nvim tmux zsh git; do
+for dir in hypr waybar ghostty nvim tmux zsh git; do
     if [ -d "$dir" ]; then
         # Check if already stowed
         if [ -L "$HOME/.config/$dir" ] || [ -L "$HOME/.$(basename $dir)rc" ]; then
@@ -375,6 +375,16 @@ for dir in hypr waybar rofi ghostty nvim tmux zsh git; do
         fi
     fi
 done
+
+# Clean up old launcher configs
+echo -e "${YELLOW}Cleaning up launcher configuration...${NC}"
+if [ -f "$DOTFILES_DIR/scripts/cleanup-rofi.sh" ]; then
+    "$DOTFILES_DIR/scripts/cleanup-rofi.sh"
+else
+    # Inline cleanup if script not found
+    [ -d "$HOME/.config/rofi" ] && rm -rf "$HOME/.config/rofi"
+    pacman -Qi rofi-wayland &> /dev/null && sudo pacman -R --noconfirm rofi-wayland
+fi
 
 # Configure Hyprland to use Super key (Linux standard)
 echo -e "${YELLOW}Configuring Hyprland keybindings...${NC}"

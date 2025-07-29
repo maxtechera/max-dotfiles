@@ -59,7 +59,18 @@ elif [ "$OS" == "arch" ]; then
     fi
     
     echo -e "\n${YELLOW}Running Arch Linux setup...${NC}"
-    ./install-arch.sh
+    
+    # Ensure we're in the right directory
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    cd "$SCRIPT_DIR"
+    
+    # Use modular installer if user wants more control
+    if [ "$1" == "--modular" ] || [ "$1" == "-m" ]; then
+        echo -e "${BLUE}Using modular installer for granular control${NC}"
+        ./install-arch-modular.sh
+    else
+        ./install-arch.sh
+    fi
 fi
 
 echo -e "\n${GREEN}Installation complete!${NC}"

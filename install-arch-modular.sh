@@ -441,12 +441,22 @@ run_15_dotfiles() {
     
     cd "$DOTFILES_DIR"
     
-    # Use GNU Stow
-    for dir in hypr waybar rofi ghostty nvim tmux zsh git; do
+    # Use GNU Stow (removed rofi from list)
+    for dir in hypr waybar ghostty nvim tmux zsh git; do
         if [ -d "$dir" ]; then
             stow -v "$dir" 2>/dev/null || echo "  ! $dir stow failed"
         fi
     done
+    
+    # Clean up old launcher configs
+    echo -e "${YELLOW}Cleaning up launcher configuration...${NC}"
+    if [ -f "$DOTFILES_DIR/scripts/cleanup-rofi.sh" ]; then
+        "$DOTFILES_DIR/scripts/cleanup-rofi.sh"
+    else
+        # Inline cleanup if script not found
+        [ -d "$HOME/.config/rofi" ] && rm -rf "$HOME/.config/rofi"
+        pacman -Qi rofi-wayland &> /dev/null && sudo pacman -R --noconfirm rofi-wayland
+    fi
     
     # Configure Hyprland to use Super key
     echo -e "${YELLOW}Configuring Hyprland keybindings...${NC}"

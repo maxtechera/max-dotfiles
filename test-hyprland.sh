@@ -33,7 +33,7 @@ fi
 
 # 3. Check critical binaries
 echo -e "\nCritical binaries:"
-for cmd in Hyprland waybar rofi ghostty; do
+for cmd in Hyprland waybar fuzzel ghostty; do
     if command -v $cmd &> /dev/null; then
         echo -e "${GREEN}✓${NC} $cmd"
     else
@@ -69,4 +69,5 @@ echo "1. Reboot and use SDDM login screen"
 echo "2. Or test now with: Hyprland"
 echo
 echo "Press Alt+Enter to open Ghostty terminal once in Hyprland"
+echo "Press Alt+Space to open app launcher (fuzzel)"
 echo "Press Alt+Shift+Q to exit Hyprland"
