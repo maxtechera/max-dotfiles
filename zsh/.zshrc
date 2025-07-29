@@ -110,12 +110,24 @@ export LANG='en_US.UTF-8'
 export LC_ALL='en_US.UTF-8'
 
 # Fast Node Manager (fnm) - Much faster than NVM
-# Check if fnm is available in the default location
-if [[ -x "$HOME/.local/share/fnm/fnm" ]]; then
-    export PATH="$HOME/.local/share/fnm:$PATH"
-    eval "$(fnm env --use-on-cd)"
-elif command -v fnm &> /dev/null; then
-    eval "$(fnm env --use-on-cd)"
+# Check multiple possible fnm installation locations
+FNM_PATHS=(
+    "${XDG_DATA_HOME:-$HOME/.local/share}/fnm"
+    "$HOME/.fnm"
+    "$HOME/.cargo/bin"
+)
+
+# Find and use fnm from any of the possible locations
+for fnm_path in "${FNM_PATHS[@]}"; do
+    if [[ -x "$fnm_path/fnm" ]]; then
+        export PATH="$fnm_path:$PATH"
+        break
+    fi
+done
+
+# Initialize fnm if available
+if command -v fnm &> /dev/null; then
+    eval "$(fnm env --use-on-cd --shell zsh)"
 else
     # Fallback to NVM if fnm not installed
     export NVM_DIR="$HOME/.nvm"
@@ -185,6 +197,16 @@ zi() {
     eval "$(zoxide init zsh)"
     zi "$@"
 }
+
+# Initialize direnv for automatic environment management
+if command -v direnv &> /dev/null; then
+    eval "$(direnv hook zsh)"
+fi
+
+# Initialize thefuck for command correction
+if command -v thefuck &> /dev/null; then
+    eval "$(thefuck --alias)"
+fi
 
 # Load local zsh config if it exists
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local

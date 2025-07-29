@@ -1,4 +1,6 @@
-# Mako Notification Daemon - Peach Theme
+# Mako Notification Daemon Configuration
+# Catppuccin Mocha Theme with Peach Accent
+# Performance-optimized notification handling
 
 # Global settings
 sort=-time
@@ -20,23 +22,31 @@ text-color=#CDD6F4
 border-color=#fab387
 progress-color=#fab387
 
-# Font
+# Font configuration
 font=JetBrainsMono Nerd Font 11
 
-# Icons
+# Icon theme
 icon-path=/usr/share/icons/Papirus-Dark
 
-# Format
+# Notification format
 format=<b>%s</b>\n%b
 
-# Grouping
+# Grouping behavior
 group-by=app-name
 
-# Actions
+# Action bindings
 on-button-left=dismiss
 on-button-middle=none
 on-button-right=dismiss-all
 on-touch=dismiss
+on-notify=exec mpv /usr/share/sounds/freedesktop/stereo/message.oga
+
+# History
+max-history=20
+history=1
+
+# Performance
+max-visible=5
 
 # Urgency styles
 [urgency=low]
@@ -57,11 +67,38 @@ text-color=#F38BA8
 border-color=#F38BA8
 default-timeout=0
 
-# Special app rules
+# Special application rules
 [app-name=volume]
 default-timeout=2000
 group-by=category
+format=<b>Volume</b>\n%b
 
 [app-name=brightness]
 default-timeout=2000
 group-by=category
+format=<b>Brightness</b>\n%b
+
+[app-name=playerctl]
+default-timeout=3000
+group-by=category
+
+[app-name=screenshot]
+default-timeout=3000
+border-color=#A6E3A1
+
+# Discord notifications
+[app-name=discord]
+format=<b>%s</b>\n%b
+max-icon-size=48
+
+# System notifications
+[category=system]
+format=<b>System</b>\n%b
+background-color=#1E1E2E
+border-color=#CBA6F7
+
+# Network notifications
+[category=network]
+format=<b>Network</b>\n%b
+background-color=#1E1E2E
+border-color=#94E2D5

@@ -1,0 +1,98 @@
+{
+  "version": "1.0",
+  "last_sync": "2025-07-29T21:22:41Z",
+  "machine": "archlinux-linux",
+  "repos": {
+    "my-envshare": {
+      "url": "git@github.com:maxtechera/my-envshare.git",
+      "branch": "main",
+      "added_by": "archlinux-linux",
+      "last_commit": "5848f4c1033016e856e26dc8e9ea919d098b330e",
+      "last_seen": "2025-07-29T21:22:41Z"
+    },
+    "solo-claude": {
+      "url": "git@github.com:maxtechera/solo-claude.git",
+      "branch": "main",
+      "added_by": "archlinux-linux",
+      "last_commit": "14ae5f8b314ac1b750edde1fa6ff3c6ebae4d1bf",
+      "last_seen": "2025-07-29T21:22:41Z"
+    },
+    "micro-saas": {
+      "url": "git@github.com:maxtechera/micro-saas.git",
+      "branch": "main",
+      "added_by": "archlinux-linux",
+      "last_commit": "7fb5018b26ed954593ac800ab2571477472f3c31",
+      "last_seen": "2025-07-29T21:22:41Z"
+    },
+    "envshare": {
+      "url": "git@github.com:maxtechera/envshare.git",
+      "branch": "main",
+      "added_by": "archlinux-linux",
+      "last_commit": "HEAD",
+      "last_seen": "2025-07-29T21:22:41Z"
+    },
+    "config/max-dotfiles": {
+      "url": "git@github.com:maxtechera/max-dotfiles.git",
+      "branch": "master",
+      "added_by": "archlinux-linux",
+      "last_commit": "27c0d3cce7d2245105565f4a083d2aab84c2992f",
+      "last_seen": "2025-07-29T21:22:41Z"
+    },
+    "all-things-monorepo": {
+      "url": "git@github.com:maxtechera/all-things-monorepo.git",
+      "branch": "main",
+      "added_by": "archlinux-linux",
+      "last_commit": "67b57faf7451570b59fd84644998fdaed85cd13e",
+      "last_seen": "2025-07-29T21:22:41Z"
+    },
+    "solo-server": {
+      "url": "git@github.com:maxtechera/solo-server.git",
+      "branch": "main",
+      "added_by": "archlinux-linux",
+      "last_commit": "49e976955a7b167c9f6891ee231d9193c18ae2a5",
+      "last_seen": "2025-07-29T21:22:41Z"
+    },
+    "claude-max": {
+      "url": "git@github.com:maxtechera/claude-max.git",
+      "branch": "main",
+      "added_by": "archlinux-linux",
+      "last_commit": "HEAD",
+      "last_seen": "2025-07-29T21:22:41Z"
+    },
+    "upwork-analyzer": {
+      "url": "git@github.com:maxtechera/upwork-analyzer.git",
+      "branch": "master",
+      "added_by": "archlinux-linux",
+      "last_commit": "9118d56bc3d1922b65242d7d27e400bebe4175d3",
+      "last_seen": "2025-07-29T21:22:41Z"
+    },
+    "private-max-claude": {
+      "url": "git@github.com:maxtechera/private-max-claude.git",
+      "branch": "main",
+      "added_by": "archlinux-linux",
+      "last_commit": "71b25a04636d67793d583d3a16585ce67d62cced",
+      "last_seen": "2025-07-29T21:22:41Z"
+    },
+    "teclas-uy": {
+      "url": "git@github.com:maxtechera/teclas-uy.git",
+      "branch": "master",
+      "added_by": "archlinux-linux",
+      "last_commit": "92b128967ae4e0addf022a2e477129a3c00d8a6b",
+      "last_seen": "2025-07-29T21:22:41Z"
+    },
+    "m-envshare": {
+      "url": "git@github.com:maxtechera/m-envshare.git",
+      "branch": "main",
+      "added_by": "archlinux-linux",
+      "last_commit": "4fe3c8dde8be7685d419eb1171eca7a50f629673",
+      "last_seen": "2025-07-29T21:22:41Z"
+    },
+    "tennis-handbook": {
+      "url": "git@github.com:maxtechera/tennis-handbook.git",
+      "branch": "main",
+      "added_by": "archlinux-linux",
+      "last_commit": "35d9f4773d35bedec21cf4ccb247c8d9854abc38",
+      "last_seen": "2025-07-29T21:22:41Z"
+    }
+  }
+}

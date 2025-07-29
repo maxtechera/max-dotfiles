@@ -1,0 +1,132 @@
+/* GTK 4.0 Custom CSS
+ * Catppuccin Mocha Theme Overrides
+ * Performance optimizations and consistency fixes
+ */
+
+/* Reduce padding on buttons for a more compact look */
+button {
+    padding: 4px 8px;
+    min-height: 24px;
+    min-width: 16px;
+}
+
+/* Fix tooltip colors */
+tooltip {
+    background-color: #1e1e2e;
+    color: #cdd6f4;
+    border: 1px solid #fab387;
+    border-radius: 8px;
+    padding: 4px 8px;
+}
+
+tooltip label {
+    color: #cdd6f4;
+}
+
+/* Improve header bar appearance */
+headerbar {
+    padding: 0 6px;
+    min-height: 38px;
+}
+
+headerbar button {
+    padding: 0 8px;
+    min-height: 28px;
+}
+
+/* Fix context menu colors */
+popover.menu {
+    background-color: #1e1e2e;
+    color: #cdd6f4;
+    border: 1px solid #313244;
+    border-radius: 8px;
+    padding: 4px 0;
+}
+
+popover.menu > contents {
+    padding: 4px 0;
+}
+
+popover.menu modelbutton:hover {
+    background-color: #313244;
+    color: #fab387;
+}
+
+/* Improve scrollbar appearance */
+scrollbar {
+    background-color: transparent;
+}
+
+scrollbar > range > trough > slider {
+    background-color: #585b70;
+    border-radius: 8px;
+    min-width: 8px;
+    min-height: 8px;
+}
+
+scrollbar > range > trough > slider:hover {
+    background-color: #6c7086;
+}
+
+scrollbar > range > trough > slider:active {
+    background-color: #fab387;
+}
+
+/* Fix switch colors */
+switch {
+    background-color: #45475a;
+    border-radius: 16px;
+}
+
+switch:checked {
+    background-color: #fab387;
+}
+
+switch > slider {
+    background-color: #cdd6f4;
+    border-radius: 50%;
+    margin: 2px;
+}
+
+/* Performance: Disable shadows on popovers */
+popover {
+    box-shadow: none;
+    border: 1px solid #313244;
+}
+
+/* Reduce animation times for snappier feel */
+* {
+    transition-duration: 150ms;
+}
+
+/* Fix selection colors */
+.view:selected {
+    background-color: #fab387;
+    color: #1e1e2e;
+}
+
+/* Improve list row appearance */
+listview > row:hover {
+    background-color: #313244;
+}
+
+listview > row:selected {
+    background-color: #fab387;
+    color: #1e1e2e;
+}
+
+/* Better sidebar styling */
+.sidebar {
+    background-color: #181825;
+    border-right: 1px solid #313244;
+}
+
+/* GTK4 specific: Fix dropdown appearance */
+dropdown button {
+    padding: 6px 12px;
+}
+
+dropdown popover {
+    background-color: #1e1e2e;
+    border: 1px solid #313244;
+}

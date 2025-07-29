@@ -2,7 +2,7 @@
 # Dev Sync - Discover, merge, and restore development repositories across machines
 # Usage: dev-sync.sh [discover|restore|status|help]
 
-set -euo pipefail
+# set -euo pipefail  # Temporarily disabled for debugging
 
 # Colors
 RED='\033[0;31m'
@@ -19,12 +19,26 @@ MANIFEST_FILE="$MAX_DEV_DIR/.dev-manifest.json"
 
 # Get machine identifier
 get_machine_id() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "$(hostname -s)-mac"
-    elif [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
-        echo "$(hostname)-wsl"
+    # Try different methods to get hostname
+    local host_name=""
+    
+    if command -v hostname &> /dev/null; then
+        host_name=$(hostname -s 2>/dev/null || hostname)
+    elif [ -f /etc/hostname ]; then
+        host_name=$(cat /etc/hostname)
     else
-        echo "$(hostname)-$(uname -s | tr '[:upper:]' '[:lower:]')"
+        host_name=$(uname -n)
+    fi
+    
+    # Clean up hostname
+    host_name=$(echo "$host_name" | tr -d '\n' | tr -cd '[:alnum:]-_')
+    
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "${host_name}-mac"
+    elif [[ -n "${WSL_DISTRO_NAME:-}" ]]; then
+        echo "${host_name}-wsl"
+    else
+        echo "${host_name}-$(uname -s | tr '[:upper:]' '[:lower:]')"
     fi
 }
 
@@ -104,12 +118,15 @@ discover_repos() {
         > "$temp_manifest"
     
     # Find all git repositories
-    while IFS= read -r -d '' repo_path; do
+    while IFS= read -r -d '' git_dir; do
+        # Get the repository directory (parent of .git)
+        local repo_path=$(dirname "$git_dir")
+        
         # Get relative path from ~/dev
         local rel_path="${repo_path#$DEV_DIR/}"
         
-        # Skip if it's the .git directory itself
-        [[ "$rel_path" == ".git" ]] && continue
+        # Skip if path is empty or just a dot
+        [[ -z "$rel_path" || "$rel_path" == "." ]] && continue
         
         local remote_url=$(get_git_remote "$repo_path")
         local branch=$(get_git_branch "$repo_path")

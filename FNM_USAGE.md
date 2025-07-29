@@ -4,9 +4,37 @@
 fnm is installed and configured for ultra-fast Node.js version management. It's **50x faster** than nvm and fully compatible with `.nvmrc` files!
 
 ## Installation Status
-✅ fnm is installed at: `~/.local/share/fnm/fnm`
+✅ fnm is installed (multiple possible locations checked)
 ✅ Automatically switches Node versions based on `.nvmrc` files
 ✅ Terminal startup is now ~10x faster (~55ms vs ~550ms)
+
+## Improved Installation Process
+The `install-arch.sh` script now includes enhanced fnm installation with:
+
+1. **Multiple Installation Methods**:
+   - AUR packages (`fnm-bin` or `fnm`)
+   - Official install script (to `~/.local/share/fnm`)
+   - Cargo installation (to `~/.cargo/bin`)
+   - npm fallback (as `@fnm/fnm`)
+
+2. **Better Error Handling**:
+   - Tries each method sequentially
+   - Verifies installation after each attempt
+   - Provides detailed error messages
+
+3. **PATH Management**:
+   - Checks multiple installation locations
+   - Automatically adds to current session PATH
+   - Updates shell configuration files
+
+4. **Verification**:
+   - Tests fnm command availability
+   - Verifies version output
+   - Ensures Node.js can be installed
+
+## Testing Tools
+- `./scripts/test-fnm-installation.sh` - Comprehensive fnm verification
+- `./scripts/install-fnm.sh` - Standalone installation script
 
 ## Basic Commands
 

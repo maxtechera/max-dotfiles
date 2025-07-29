@@ -458,36 +458,30 @@ run_15_dotfiles() {
         pacman -Qi rofi-wayland &> /dev/null && sudo pacman -R --noconfirm rofi-wayland
     fi
     
-    # Configure Hyprland to use Super key
-    echo -e "${YELLOW}Configuring Hyprland keybindings...${NC}"
+    # Verify Hyprland configuration
+    echo -e "${YELLOW}Verifying Hyprland configuration...${NC}"
     HYPR_CONFIG="$HOME/.config/hypr/hyprland.conf"
-    HYPR_SUPER="$HOME/.config/hypr/hyprland-super.conf"
-    HYPR_CURRENT="$HOME/.config/hypr/hyprland-current.conf"
     
-    if [ -f "$HYPR_CONFIG" ] && ! grep -q "mainMod = SUPER" "$HYPR_CONFIG" 2>/dev/null; then
-        echo -e "${YELLOW}Using Super key for Hyprland (Linux standard)${NC}"
-        # Backup original Alt config
-        if [ ! -L "$HYPR_CONFIG" ]; then
-            cp "$HYPR_CONFIG" "$HYPR_CONFIG.alt-backup"
-        fi
+    if [ -f "$HYPR_CONFIG" ]; then
+        echo -e "${GREEN}✓ Hyprland configuration present${NC}"
         
-        # Use Super config
-        if [ -f "$HYPR_SUPER" ]; then
-            cp "$HYPR_SUPER" "$HYPR_CURRENT"
-            rm -f "$HYPR_CONFIG"
-            ln -s "hyprland-current.conf" "$HYPR_CONFIG"
-            echo -e "${GREEN}✓ Configured Super key${NC}"
+        # Verify it uses Super key (Linux standard)
+        if grep -q "mainMod = SUPER" "$HYPR_CONFIG" 2>/dev/null; then
+            echo -e "${GREEN}✓ Using Super key (Linux standard)${NC}"
+        else
+            echo -e "${YELLOW}! Config may not be using Super key${NC}"
         fi
+    else
+        echo -e "${RED}! Hyprland configuration not found${NC}"
     fi
     
     # Install custom scripts
-    for script in scripts/nvim-tab scripts/github-dev-sync.sh scripts/fix-arch-audio.sh scripts/fix-nvm.sh scripts/switch-hypr-keys.sh scripts/fix-hyprland-setup.sh; do
+    for script in scripts/nvim-tab scripts/github-dev-sync.sh scripts/fix-arch-audio.sh scripts/fix-nvm.sh scripts/fix-hyprland-setup.sh; do
         if [ -f "$script" ]; then
             SCRIPT_NAME=$(basename "$script" .sh)
             DEST="/usr/local/bin/${SCRIPT_NAME/github-dev-sync/dev-sync}"
             DEST="${DEST/fix-arch-audio/fix-audio}"
             DEST="${DEST/fix-hyprland-setup/fix-hyprland}"
-            DEST="${DEST/switch-hypr-keys/switch-keys}"
             
             sudo install -m 755 "$script" "$DEST"
         fi
