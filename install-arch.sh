@@ -71,7 +71,7 @@ install_aur_if_missing() {
     fi
 }
 
-# Critical package verification function
+# Enhanced critical package verification function
 verify_critical_packages() {
     local failed_packages=()
     local critical_packages=("$@")
@@ -82,31 +82,99 @@ verify_critical_packages() {
             failed_packages+=("$package")
             echo -e "${RED}✗ Critical package $package not installed${NC}"
         else
-            echo -e "${GREEN}✓ $package verified${NC}"
+            echo -e "${GREEN}✓ $package verified and installed${NC}"
         fi
     done
     
     if [ ${#failed_packages[@]} -gt 0 ]; then
-        echo -e "${RED}CRITICAL ERROR: The following packages failed to install:${NC}"
+        echo -e "${RED}CRITICAL ERROR: The following essential packages failed to install:${NC}"
         printf '  %s\n' "${failed_packages[@]}"
-        echo -e "${YELLOW}Installation cannot continue without these packages.${NC}"
-        return 1
+        echo -e "${YELLOW}These packages are required for the system to function properly.${NC}"
+        echo -e "${YELLOW}Attempting to reinstall missing packages...${NC}"
+        
+        # Attempt to reinstall missing critical packages
+        local recovery_failed=()
+        for package in "${failed_packages[@]}"; do
+            echo -e "${YELLOW}Attempting to reinstall $package...${NC}"
+            if sudo pacman -S --needed --noconfirm "$package" 2>/dev/null; then
+                echo -e "${GREEN}✓ Successfully reinstalled $package${NC}"
+            else
+                recovery_failed+=("$package")
+                echo -e "${RED}✗ Failed to reinstall $package${NC}"
+            fi
+        done
+        
+        # Final check after recovery attempt
+        if [ ${#recovery_failed[@]} -gt 0 ]; then
+            echo -e "${RED}FATAL ERROR: Cannot recover the following critical packages:${NC}"
+            printf '  %s\n' "${recovery_failed[@]}"
+            echo -e "${YELLOW}Manual intervention required. Installation cannot continue.${NC}"
+            return 1
+        else
+            echo -e "${GREEN}✓ All critical packages recovered successfully${NC}"
+        fi
     fi
     return 0
 }
 
-# PATH verification function
+# Enhanced PATH verification function
 verify_command_available() {
     local command=$1
     local package=${2:-$1}
+    local optional=${3:-false}
     
     if command -v "$command" &> /dev/null; then
-        echo -e "${GREEN}✓ $command available in PATH${NC}"
+        local cmd_path=$(which "$command")
+        echo -e "${GREEN}✓ $command available at: $cmd_path${NC}"
         return 0
     else
-        echo -e "${RED}✗ $command not found in PATH (package: $package)${NC}"
-        return 1
+        if [ "$optional" = "true" ]; then
+            echo -e "${YELLOW}! $command not found in PATH (package: $package) - OPTIONAL${NC}"
+            return 0  # Don't fail for optional commands
+        else
+            echo -e "${RED}✗ $command not found in PATH (package: $package) - REQUIRED${NC}"
+            return 1
+        fi
     fi
+}
+
+# Comprehensive system verification function
+verify_system_health() {
+    echo -e "${YELLOW}Performing comprehensive system health check...${NC}"
+    local failed_checks=()
+    
+    # Check critical system services
+    local services=("NetworkManager" "bluetooth")
+    for service in "${services[@]}"; do
+        if systemctl is-enabled "$service" &> /dev/null; then
+            echo -e "${GREEN}✓ $service service enabled${NC}"
+        else
+            echo -e "${YELLOW}! $service service not enabled${NC}"
+        fi
+    done
+    
+    # Check user services
+    local user_services=("pipewire" "wireplumber")
+    for service in "${user_services[@]}"; do
+        if systemctl --user is-enabled "$service" &> /dev/null 2>&1; then
+            echo -e "${GREEN}✓ $service user service enabled${NC}"
+        else
+            echo -e "${YELLOW}! $service user service not enabled${NC}"
+        fi
+    done
+    
+    # Check for required directories
+    local dirs=("$HOME/.config" "$HOME/.local/bin" "$HOME/.local/share")
+    for dir in "${dirs[@]}"; do
+        if [ -d "$dir" ]; then
+            echo -e "${GREEN}✓ Directory $dir exists${NC}"
+        else
+            mkdir -p "$dir"
+            echo -e "${YELLOW}Created directory $dir${NC}"
+        fi
+    done
+    
+    return 0
 }
 
 # Progress counter
@@ -283,12 +351,24 @@ if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then
 fi
 
 # Verify critical Hyprland packages are installed
-CRITICAL_HYPRLAND=("hyprland" "fuzzel" "mako" "swww" "waybar" "pipewire" "wireplumber")
+echo -e "${YELLOW}Verifying Hyprland environment...${NC}"
+CRITICAL_HYPRLAND=("hyprland" "fuzzel" "mako" "swww" "waybar" "pipewire" "wireplumber" "grim" "slurp" "wl-clipboard")
 if ! verify_critical_packages "${CRITICAL_HYPRLAND[@]}"; then
     echo -e "${RED}CRITICAL ERROR: Essential Hyprland packages missing. Installation cannot continue.${NC}"
     exit 1
 fi
-echo -e "${GREEN}✓ Hyprland packages ready${NC}"
+
+# Additional verification for Hyprland-specific functionality
+echo -e "${YELLOW}Checking Hyprland component availability...${NC}"
+HYPRLAND_COMMANDS=("hyprland" "fuzzel" "mako" "swww" "waybar" "grim" "slurp" "wl-copy")
+for cmd in "${HYPRLAND_COMMANDS[@]}"; do
+    if ! verify_command_available "$cmd"; then
+        echo -e "${RED}CRITICAL: $cmd command not available${NC}"
+        exit 1
+    fi
+done
+
+echo -e "${GREEN}✓ Hyprland environment verified and ready${NC}"
 
 # Install fonts
 step "Installing fonts..."
@@ -614,43 +694,99 @@ install_fnm() {
     case $install_method in
         "aur")
             if command -v yay &> /dev/null; then
-                yay -S --needed --noconfirm fnm-bin
+                if yay -S --needed --noconfirm fnm-bin 2>/dev/null; then
+                    echo -e "${GREEN}✓ fnm-bin installed via AUR${NC}"
+                    return 0
+                else
+                    echo -e "${RED}✗ AUR installation failed${NC}"
+                    return 1
+                fi
             else
+                echo -e "${YELLOW}yay not available${NC}"
                 return 1
             fi
             ;;
         "script")
-            curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell
+            if curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell 2>/dev/null; then
+                echo -e "${GREEN}✓ fnm installed via install script${NC}"
+                return 0
+            else
+                echo -e "${RED}✗ Script installation failed${NC}"
+                return 1
+            fi
             ;;
         "cargo")
             if command -v cargo &> /dev/null; then
-                cargo install fnm
+                if cargo install fnm 2>/dev/null; then
+                    echo -e "${GREEN}✓ fnm installed via cargo${NC}"
+                    return 0
+                else
+                    echo -e "${RED}✗ Cargo installation failed${NC}"
+                    return 1
+                fi
             else
+                echo -e "${YELLOW}cargo not available${NC}"
+                return 1
+            fi
+            ;;
+        "pacman")
+            # Try installing rust first for cargo method as fallback
+            if sudo pacman -S --needed --noconfirm rust 2>/dev/null; then
+                if cargo install fnm 2>/dev/null; then
+                    echo -e "${GREEN}✓ fnm installed via pacman+cargo${NC}"
+                    return 0
+                else
+                    echo -e "${RED}✗ Pacman+cargo installation failed${NC}"
+                    return 1
+                fi
+            else
+                echo -e "${RED}✗ Could not install rust via pacman${NC}"
                 return 1
             fi
             ;;
         *)
+            echo -e "${RED}✗ Unknown installation method: $install_method${NC}"
             return 1
             ;;
     esac
 }
 
 setup_fnm_environment() {
-    # Add fnm to PATH for this session
-    if [ -d "$HOME/.local/share/fnm" ]; then
-        export PATH="$HOME/.local/share/fnm:$PATH"
-    elif [ -d "$HOME/.fnm" ]; then
-        export PATH="$HOME/.fnm:$PATH"
-    elif [ -d "$HOME/.cargo/bin" ] && [ -f "$HOME/.cargo/bin/fnm" ]; then
-        export PATH="$HOME/.cargo/bin:$PATH"
-    fi
+    echo -e "${YELLOW}Setting up fnm environment...${NC}"
     
-    # Initialize fnm if available
+    # Multiple possible fnm installation locations
+    local fnm_paths=(
+        "$HOME/.local/share/fnm"
+        "$HOME/.fnm"
+        "$HOME/.cargo/bin"
+        "/usr/local/bin"
+        "/usr/bin"
+    )
+    
+    # Add all possible paths to current session PATH
+    for fnm_path in "${fnm_paths[@]}"; do
+        if [ -d "$fnm_path" ]; then
+            export PATH="$fnm_path:$PATH"
+            echo -e "${YELLOW}Added $fnm_path to PATH${NC}"
+        fi
+    done
+    
+    # Verify fnm is now available
     if command -v fnm &> /dev/null; then
-        eval "$(fnm env --use-on-cd)"
-        return 0
+        echo -e "${GREEN}✓ fnm found at: $(which fnm)${NC}"
+        
+        # Initialize fnm environment
+        if eval "$(fnm env --use-on-cd)" 2>/dev/null; then
+            echo -e "${GREEN}✓ fnm environment initialized${NC}"
+            return 0
+        else
+            echo -e "${RED}✗ Failed to initialize fnm environment${NC}"
+            return 1
+        fi
+    else
+        echo -e "${RED}✗ fnm not found in PATH after setup${NC}"
+        return 1
     fi
-    return 1
 }
 
 install_nodejs_with_fnm() {
@@ -676,18 +812,32 @@ install_nodejs_with_fnm() {
 if ! command -v fnm &> /dev/null; then
     echo -e "${YELLOW}Installing Fast Node Manager (fnm)...${NC}"
     
-    # Try multiple installation methods
+    # Try multiple installation methods with better error handling
     FNM_INSTALLED=false
+    local methods=("aur" "script" "pacman" "cargo")
     
-    for method in "aur" "script" "cargo"; do
+    for method in "${methods[@]}"; do
+        echo -e "${YELLOW}Attempting fnm installation via $method...${NC}"
+        
         if install_fnm "$method"; then
+            # Verify installation worked
             if setup_fnm_environment; then
-                FNM_INSTALLED=true
-                echo -e "${GREEN}✓ fnm installed successfully via $method${NC}"
-                break
+                # Double-check that fnm command actually works
+                if fnm --version &> /dev/null; then
+                    FNM_INSTALLED=true
+                    echo -e "${GREEN}✓ fnm installed and verified via $method${NC}"
+                    echo -e "${GREEN}✓ fnm version: $(fnm --version)${NC}"
+                    break
+                else
+                    echo -e "${RED}✗ fnm installed but not working properly${NC}"
+                fi
+            else
+                echo -e "${RED}✗ fnm installed but environment setup failed${NC}"
             fi
         fi
+        
         echo -e "${YELLOW}$method installation failed, trying next method...${NC}"
+        sleep 1  # Brief pause between attempts
     done
     
     if [ "$FNM_INSTALLED" = false ]; then
@@ -749,23 +899,51 @@ done
 # Configure Powerlevel10k
 echo -e "${YELLOW}Setting up Powerlevel10k configuration...${NC}"
 if [ ! -f "$HOME/.p10k.zsh" ]; then
-    echo -e "${YELLOW}Powerlevel10k not configured yet${NC}"
-    read -p "Configure Powerlevel10k with optimized defaults? (y/n) [y]: " -n 1 -r REPLY
-    REPLY=${REPLY:-y}
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        # Use the existing p10k config from dotfiles if available
-        if [ -f "$DOTFILES_DIR/zsh/.p10k.zsh" ]; then
-            echo -e "${GREEN}Using optimized p10k configuration from dotfiles${NC}"
-            cp "$DOTFILES_DIR/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
-        else
-            echo -e "${YELLOW}Running p10k configure with sensible defaults...${NC}"
-            # Set up basic p10k config non-interactively
-            zsh -c 'source ~/.oh-my-zsh/custom/themes/powerlevel10k/powerlevel10k.zsh-theme; p10k configure' || true
-        fi
+    echo -e "${YELLOW}Configuring Powerlevel10k with performance-optimized defaults...${NC}"
+    
+    # Use the existing p10k config from dotfiles if available
+    if [ -f "$DOTFILES_DIR/zsh/.p10k.zsh" ]; then
+        echo -e "${GREEN}Using optimized p10k configuration from dotfiles${NC}"
+        cp "$DOTFILES_DIR/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
+        echo -e "${GREEN}✓ Powerlevel10k configured with performance settings${NC}"
+    else
+        echo -e "${YELLOW}Dotfiles p10k config not found, creating basic optimized config...${NC}"
+        # Create a basic performance-optimized p10k config
+        cat > "$HOME/.p10k.zsh" << 'P10K_CONFIG'
+# Performance-optimized Powerlevel10k configuration
+# Generated by dotfiles installer for fast startup
+
+# Enable Powerlevel10k instant prompt
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+# Powerlevel10k configuration
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=verbose
+typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(dir git prompt_char)
+typeset -g POWERLEVEL9K_RIGHT_PROMPT_ELEMENTS=(status node_version time)
+typeset -g POWERLEVEL9K_MODE=nerdfont-v3
+typeset -g POWERLEVEL9K_ICON_PADDING=none
+typeset -g POWERLEVEL9K_BACKGROUND=
+typeset -g POWERLEVEL9K_PROMPT_ADD_NEWLINE=true
+typeset -g POWERLEVEL9K_MULTILINE_FIRST_PROMPT_PREFIX=
+typeset -g POWERLEVEL9K_MULTILINE_NEWLINE_PROMPT_PREFIX=
+typeset -g POWERLEVEL9K_MULTILINE_LAST_PROMPT_PREFIX='%F{blue}❯ %f'
+typeset -g POWERLEVEL9K_PROMPT_CHAR_OK_VIINS_FOREGROUND=blue
+typeset -g POWERLEVEL9K_PROMPT_CHAR_ERROR_VIINS_FOREGROUND=red
+P10K_CONFIG
+        echo -e "${GREEN}✓ Basic Powerlevel10k config created${NC}"
     fi
 else
     echo -e "${GREEN}✓ Powerlevel10k already configured${NC}"
+fi
+
+# Verify Powerlevel10k is working
+echo -e "${YELLOW}Verifying Powerlevel10k installation...${NC}"
+if zsh -c 'source ~/.oh-my-zsh/custom/themes/powerlevel10k/powerlevel10k.zsh-theme && echo "Powerlevel10k loaded successfully"' &>/dev/null; then
+    echo -e "${GREEN}✓ Powerlevel10k verification passed${NC}"
+else
+    echo -e "${YELLOW}! Powerlevel10k verification failed (may still work)${NC}"
 fi
 
 # Compile zsh files for performance
