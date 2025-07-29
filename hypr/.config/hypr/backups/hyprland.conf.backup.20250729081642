@@ -1,6 +1,6 @@
-# Hyprland Configuration - Canonical Setup
-# This is the single source of truth for Hyprland configuration
-# Uses Super (Windows) key as primary modifier and fuzzel as launcher
+# Hyprland Configuration - Linux Standard (Super key)
+# This version uses Super (Windows key) to avoid conflicts
+# Source this instead of hyprland.conf if you want Linux standards
 
 # Monitor setup (adjust to your setup)
 monitor=,preferred,auto,1
@@ -66,8 +66,10 @@ decoration {
         passes = 1
     }
 
-    # Shadow settings moved to window rules in newer Hyprland
-    # Use windowrulev2 = noshadow, class:^(kitty)$ to disable shadows per window
+    drop_shadow = true
+    shadow_range = 4
+    shadow_render_power = 3
+    col.shadow = rgba(1a1a1aee)
     
     # Opacity removed - use window rules if needed
 }
@@ -126,7 +128,7 @@ bind = $mainMod, V, togglefloating,
 bind = $mainMod, P, pseudo, # dwindle
 bind = $mainMod, J, togglesplit, # dwindle
 
-# Fuzzel - Ultra fast minimal launcher (replaces rofi)
+# Fuzzel - Ultra fast minimal launcher
 bind = $mainMod, D, exec, fuzzel
 bind = $mainMod, SPACE, exec, fuzzel
 

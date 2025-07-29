@@ -45,7 +45,12 @@ install_if_missing() {
     local package=$1
     if ! check_installed "$package"; then
         echo -e "${YELLOW}Installing $package...${NC}"
-        sudo pacman -S --needed --noconfirm "$package"
+        if sudo pacman -S --needed --noconfirm "$package"; then
+            echo -e "${GREEN}✓ $package installed successfully${NC}"
+        else
+            echo -e "${RED}✗ Failed to install $package${NC}"
+            return 1
+        fi
     else
         echo -e "${GREEN}✓ $package already installed${NC}"
     fi
@@ -55,15 +60,58 @@ install_aur_if_missing() {
     local package=$1
     if ! check_aur_installed "$package"; then
         echo -e "${YELLOW}Installing $package from AUR...${NC}"
-        yay -S --needed --noconfirm "$package"
+        if yay -S --needed --noconfirm "$package"; then
+            echo -e "${GREEN}✓ $package installed successfully${NC}"
+        else
+            echo -e "${RED}✗ Failed to install $package${NC}"
+            return 1
+        fi
     else
         echo -e "${GREEN}✓ $package already installed${NC}"
     fi
 }
 
+# Critical package verification function
+verify_critical_packages() {
+    local failed_packages=()
+    local critical_packages=("$@")
+    
+    echo -e "${YELLOW}Verifying critical packages...${NC}"
+    for package in "${critical_packages[@]}"; do
+        if ! check_installed "$package"; then
+            failed_packages+=("$package")
+            echo -e "${RED}✗ Critical package $package not installed${NC}"
+        else
+            echo -e "${GREEN}✓ $package verified${NC}"
+        fi
+    done
+    
+    if [ ${#failed_packages[@]} -gt 0 ]; then
+        echo -e "${RED}CRITICAL ERROR: The following packages failed to install:${NC}"
+        printf '  %s\n' "${failed_packages[@]}"
+        echo -e "${YELLOW}Installation cannot continue without these packages.${NC}"
+        return 1
+    fi
+    return 0
+}
+
+# PATH verification function
+verify_command_available() {
+    local command=$1
+    local package=${2:-$1}
+    
+    if command -v "$command" &> /dev/null; then
+        echo -e "${GREEN}✓ $command available in PATH${NC}"
+        return 0
+    else
+        echo -e "${RED}✗ $command not found in PATH (package: $package)${NC}"
+        return 1
+    fi
+}
+
 # Progress counter
 STEP=0
-TOTAL_STEPS=12
+TOTAL_STEPS=13
 
 step() {
     STEP=$((STEP + 1))
@@ -146,7 +194,7 @@ fi
 step "Installing base packages..."
 BASE_PACKAGES=(
     neovim neovim-remote tmux zsh stow
-    wget curl unzip ripgrep fd fzf bat
+    wget curl unzip ripgrep fd fzf bat jq
     htop btop neofetch ranger lazygit
     github-cli jq man-db man-pages
     openssh python python-pip python-pipx
@@ -165,12 +213,26 @@ done
 
 if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then
     echo -e "${YELLOW}Installing ${#PACKAGES_TO_INSTALL[@]} base packages...${NC}"
-    sudo pacman -S --needed --noconfirm "${PACKAGES_TO_INSTALL[@]}" 2>/dev/null || {
-        echo -e "${YELLOW}Some packages failed, installing individually...${NC}"
+    
+    # Try bulk install first
+    if sudo pacman -S --needed --noconfirm "${PACKAGES_TO_INSTALL[@]}" 2>/dev/null; then
+        echo -e "${GREEN}✓ All base packages installed successfully${NC}"
+    else
+        echo -e "${YELLOW}Bulk install failed, installing individually...${NC}"
+        local failed_packages=()
         for pkg in "${PACKAGES_TO_INSTALL[@]}"; do
-            sudo pacman -S --needed --noconfirm "$pkg" 2>/dev/null || echo "  ! $pkg not available"
+            if ! sudo pacman -S --needed --noconfirm "$pkg" 2>/dev/null; then
+                failed_packages+=("$pkg")
+                echo -e "${RED}✗ Failed to install $pkg${NC}"
+            else
+                echo -e "${GREEN}✓ $pkg installed${NC}"
+            fi
         done
-    }
+        
+        if [ ${#failed_packages[@]} -gt 0 ]; then
+            echo -e "${YELLOW}Non-critical packages that failed: ${failed_packages[*]}${NC}"
+        fi
+    fi
 fi
 echo -e "${GREEN}✓ Base packages ready${NC}"
 
@@ -198,12 +260,33 @@ done
 
 if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then
     echo -e "${YELLOW}Installing ${#PACKAGES_TO_INSTALL[@]} Hyprland packages...${NC}"
-    sudo pacman -S --needed --noconfirm "${PACKAGES_TO_INSTALL[@]}" 2>/dev/null || {
-        echo -e "${YELLOW}Some packages failed, installing individually...${NC}"
+    
+    # Try bulk install first
+    if sudo pacman -S --needed --noconfirm "${PACKAGES_TO_INSTALL[@]}" 2>/dev/null; then
+        echo -e "${GREEN}✓ All Hyprland packages installed successfully${NC}"
+    else
+        echo -e "${YELLOW}Bulk install failed, installing individually...${NC}"
+        local failed_packages=()
         for pkg in "${PACKAGES_TO_INSTALL[@]}"; do
-            sudo pacman -S --needed --noconfirm "$pkg" 2>/dev/null || echo "  ! $pkg not available"
+            if ! sudo pacman -S --needed --noconfirm "$pkg" 2>/dev/null; then
+                failed_packages+=("$pkg")
+                echo -e "${RED}✗ Failed to install $pkg${NC}"
+            else
+                echo -e "${GREEN}✓ $pkg installed${NC}"
+            fi
         done
-    }
+        
+        if [ ${#failed_packages[@]} -gt 0 ]; then
+            echo -e "${YELLOW}Failed packages: ${failed_packages[*]}${NC}"
+        fi
+    fi
+fi
+
+# Verify critical Hyprland packages are installed
+CRITICAL_HYPRLAND=("hyprland" "fuzzel" "mako" "swww" "waybar" "pipewire" "wireplumber")
+if ! verify_critical_packages "${CRITICAL_HYPRLAND[@]}"; then
+    echo -e "${RED}CRITICAL ERROR: Essential Hyprland packages missing. Installation cannot continue.${NC}"
+    exit 1
 fi
 echo -e "${GREEN}✓ Hyprland packages ready${NC}"
 
@@ -226,12 +309,26 @@ done
 
 if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then
     echo -e "${YELLOW}Installing ${#PACKAGES_TO_INSTALL[@]} font packages...${NC}"
-    sudo pacman -S --needed --noconfirm "${PACKAGES_TO_INSTALL[@]}" 2>/dev/null || {
-        echo -e "${YELLOW}Some packages failed, installing individually...${NC}"
+    
+    # Try bulk install first
+    if sudo pacman -S --needed --noconfirm "${PACKAGES_TO_INSTALL[@]}" 2>/dev/null; then
+        echo -e "${GREEN}✓ All font packages installed successfully${NC}"
+    else
+        echo -e "${YELLOW}Bulk install failed, installing individually...${NC}"
+        local failed_packages=()
         for pkg in "${PACKAGES_TO_INSTALL[@]}"; do
-            sudo pacman -S --needed --noconfirm "$pkg" 2>/dev/null || echo "  ! $pkg not available"
+            if ! sudo pacman -S --needed --noconfirm "$pkg" 2>/dev/null; then
+                failed_packages+=("$pkg")
+                echo -e "${RED}✗ Failed to install $pkg${NC}"
+            else
+                echo -e "${GREEN}✓ $pkg installed${NC}"
+            fi
         done
-    }
+        
+        if [ ${#failed_packages[@]} -gt 0 ]; then
+            echo -e "${YELLOW}Font packages that failed: ${failed_packages[*]}${NC}"
+        fi
+    fi
 fi
 echo -e "${GREEN}✓ Fonts ready${NC}"
 
@@ -365,13 +462,22 @@ done
 
 # Use GNU Stow to symlink configs
 echo -e "${YELLOW}Creating symlinks...${NC}"
-for dir in hypr waybar ghostty nvim tmux zsh git; do
+for dir in hypr waybar ghostty nvim tmux zsh git dev; do
     if [ -d "$dir" ]; then
-        # Check if already stowed
-        if [ -L "$HOME/.config/$dir" ] || [ -L "$HOME/.$(basename $dir)rc" ]; then
-            echo -e "  ${GREEN}✓ $dir already linked${NC}"
+        # Special handling for dev directory (links to ~/dev)
+        if [ "$dir" = "dev" ]; then
+            if [ -L "$HOME/dev" ]; then
+                echo -e "  ${GREEN}✓ $dir already linked${NC}"
+            else
+                stow -v "$dir" 2>/dev/null || echo -e "  ${YELLOW}! $dir stow failed (may already be linked)${NC}"
+            fi
         else
-            stow -v "$dir" 2>/dev/null || echo -e "  ${YELLOW}! $dir stow failed (may already be linked)${NC}"
+            # Check if already stowed
+            if [ -L "$HOME/.config/$dir" ] || [ -L "$HOME/.$(basename $dir)rc" ]; then
+                echo -e "  ${GREEN}✓ $dir already linked${NC}"
+            else
+                stow -v "$dir" 2>/dev/null || echo -e "  ${YELLOW}! $dir stow failed (may already be linked)${NC}"
+            fi
         fi
     fi
 done
@@ -448,20 +554,46 @@ else
     echo -e "${GREEN}✓ Oh My Zsh already installed${NC}"
 fi
 
-# Set up zsh plugins
-echo -e "${YELLOW}Installing zsh plugins...${NC}"
+# Set up performance-optimized zsh plugins and theme
+echo -e "${YELLOW}Installing performance-optimized zsh setup...${NC}"
 ZSH_CUSTOM=${ZSH_CUSTOM:-~/.oh-my-zsh/custom}
 
+# Install Powerlevel10k theme
+if [ ! -d "$ZSH_CUSTOM/themes/powerlevel10k" ]; then
+    echo -e "${YELLOW}Installing Powerlevel10k theme...${NC}"
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k"
+else
+    echo -e "${GREEN}✓ Powerlevel10k already installed${NC}"
+fi
+
+# Install performance-optimized plugins
 if [ ! -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]; then
+    echo -e "${YELLOW}Installing zsh-autosuggestions...${NC}"
     git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
 else
     echo -e "${GREEN}✓ zsh-autosuggestions already installed${NC}"
 fi
 
-if [ ! -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]; then
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
+# Use fast-syntax-highlighting instead of zsh-syntax-highlighting for better performance
+if [ ! -d "$ZSH_CUSTOM/plugins/fast-syntax-highlighting" ]; then
+    echo -e "${YELLOW}Installing fast-syntax-highlighting (performance optimized)...${NC}"
+    git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git "$ZSH_CUSTOM/plugins/fast-syntax-highlighting"
 else
-    echo -e "${GREEN}✓ zsh-syntax-highlighting already installed${NC}"
+    echo -e "${GREEN}✓ fast-syntax-highlighting already installed${NC}"
+fi
+
+# Install zsh-autocomplete for better completion performance
+if [ ! -d "$ZSH_CUSTOM/plugins/zsh-autocomplete" ]; then
+    echo -e "${YELLOW}Installing zsh-autocomplete (performance optimized)...${NC}"
+    git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git "$ZSH_CUSTOM/plugins/zsh-autocomplete"
+else
+    echo -e "${GREEN}✓ zsh-autocomplete already installed${NC}"
+fi
+
+# Remove old zsh-syntax-highlighting if it exists (replaced by fast-syntax-highlighting)
+if [ -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]; then
+    echo -e "${YELLOW}Removing old zsh-syntax-highlighting (replaced by fast version)...${NC}"
+    rm -rf "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
 fi
 
 # Install tmux plugin manager
@@ -472,40 +604,133 @@ else
     echo -e "${GREEN}✓ Tmux plugin manager already installed${NC}"
 fi
 
-# Install NVM
-if [ ! -d "$HOME/.nvm" ]; then
-    echo -e "${YELLOW}Installing NVM...${NC}"
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+# Install Fast Node Manager (fnm) - Much faster than NVM
+echo -e "${YELLOW}Setting up Node.js environment...${NC}"
+
+install_fnm() {
+    local install_method=$1
+    echo -e "${YELLOW}Installing fnm using $install_method...${NC}"
     
-    # Source NVM immediately
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+    case $install_method in
+        "aur")
+            if command -v yay &> /dev/null; then
+                yay -S --needed --noconfirm fnm-bin
+            else
+                return 1
+            fi
+            ;;
+        "script")
+            curl -fsSL https://fnm.vercel.app/install | bash -s -- --skip-shell
+            ;;
+        "cargo")
+            if command -v cargo &> /dev/null; then
+                cargo install fnm
+            else
+                return 1
+            fi
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+setup_fnm_environment() {
+    # Add fnm to PATH for this session
+    if [ -d "$HOME/.local/share/fnm" ]; then
+        export PATH="$HOME/.local/share/fnm:$PATH"
+    elif [ -d "$HOME/.fnm" ]; then
+        export PATH="$HOME/.fnm:$PATH"
+    elif [ -d "$HOME/.cargo/bin" ] && [ -f "$HOME/.cargo/bin/fnm" ]; then
+        export PATH="$HOME/.cargo/bin:$PATH"
+    fi
     
+    # Initialize fnm if available
+    if command -v fnm &> /dev/null; then
+        eval "$(fnm env --use-on-cd)"
+        return 0
+    fi
+    return 1
+}
+
+install_nodejs_with_fnm() {
     echo -e "${YELLOW}Installing Node.js LTS...${NC}"
-    nvm install --lts
-    nvm use --lts
-    nvm alias default node
     
-    # Verify installation
-    echo -e "${GREEN}✓ Node.js $(node --version) installed${NC}"
+    if fnm install --lts && fnm use lts-latest && fnm default lts-latest; then
+        echo -e "${GREEN}✓ Node.js $(node --version) installed successfully${NC}"
+        
+        # Install global npm packages
+        echo -e "${YELLOW}Installing global npm packages...${NC}"
+        if npm install -g pnpm yarn typescript prettier eslint; then
+            echo -e "${GREEN}✓ Global npm packages installed${NC}"
+        else
+            echo -e "${YELLOW}! Some npm packages failed to install${NC}"
+        fi
+        return 0
+    else
+        echo -e "${RED}✗ Failed to install Node.js with fnm${NC}"
+        return 1
+    fi
+}
+
+if ! command -v fnm &> /dev/null; then
+    echo -e "${YELLOW}Installing Fast Node Manager (fnm)...${NC}"
     
-    # Install global npm packages
-    echo -e "${YELLOW}Installing global npm packages...${NC}"
-    npm install -g pnpm yarn typescript prettier eslint
+    # Try multiple installation methods
+    FNM_INSTALLED=false
+    
+    for method in "aur" "script" "cargo"; do
+        if install_fnm "$method"; then
+            if setup_fnm_environment; then
+                FNM_INSTALLED=true
+                echo -e "${GREEN}✓ fnm installed successfully via $method${NC}"
+                break
+            fi
+        fi
+        echo -e "${YELLOW}$method installation failed, trying next method...${NC}"
+    done
+    
+    if [ "$FNM_INSTALLED" = false ]; then
+        echo -e "${RED}✗ CRITICAL: Failed to install fnm with all methods${NC}"
+        echo -e "${YELLOW}Manual installation required. Install fnm manually and re-run this script.${NC}"
+        exit 1
+    fi
+    
+    # Install Node.js
+    if ! install_nodejs_with_fnm; then
+        echo -e "${RED}✗ CRITICAL: Failed to install Node.js${NC}"
+        exit 1
+    fi
 else
-    echo -e "${GREEN}✓ NVM already installed${NC}"
-    # Source it anyway to ensure it's available
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    echo -e "${GREEN}✓ fnm already installed${NC}"
+    
+    # Ensure fnm is available in current session
+    if ! setup_fnm_environment; then
+        echo -e "${RED}✗ Failed to initialize fnm environment${NC}"
+        exit 1
+    fi
     
     # Check if node is installed
     if ! command -v node &> /dev/null; then
         echo -e "${YELLOW}Node not found, installing LTS...${NC}"
-        nvm install --lts
-        nvm use --lts
-        nvm alias default node
+        if ! install_nodejs_with_fnm; then
+            echo -e "${RED}✗ CRITICAL: Failed to install Node.js${NC}"
+            exit 1
+        fi
+    else
+        echo -e "${GREEN}✓ Node.js $(node --version) already available${NC}"
     fi
+fi
+
+# Verify fnm and node are working
+if ! verify_command_available "fnm" "fnm-bin"; then
+    echo -e "${RED}✗ CRITICAL: fnm verification failed${NC}"
+    exit 1
+fi
+
+if ! verify_command_available "node" "nodejs via fnm"; then
+    echo -e "${RED}✗ CRITICAL: Node.js verification failed${NC}"
+    exit 1
 fi
 
 # Set up Python tools
@@ -520,6 +745,43 @@ for tool in "${PYTHON_TOOLS[@]}"; do
         echo -e "${GREEN}✓ $tool already installed${NC}"
     fi
 done
+
+# Configure Powerlevel10k
+echo -e "${YELLOW}Setting up Powerlevel10k configuration...${NC}"
+if [ ! -f "$HOME/.p10k.zsh" ]; then
+    echo -e "${YELLOW}Powerlevel10k not configured yet${NC}"
+    read -p "Configure Powerlevel10k with optimized defaults? (y/n) [y]: " -n 1 -r REPLY
+    REPLY=${REPLY:-y}
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        # Use the existing p10k config from dotfiles if available
+        if [ -f "$DOTFILES_DIR/zsh/.p10k.zsh" ]; then
+            echo -e "${GREEN}Using optimized p10k configuration from dotfiles${NC}"
+            cp "$DOTFILES_DIR/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
+        else
+            echo -e "${YELLOW}Running p10k configure with sensible defaults...${NC}"
+            # Set up basic p10k config non-interactively
+            zsh -c 'source ~/.oh-my-zsh/custom/themes/powerlevel10k/powerlevel10k.zsh-theme; p10k configure' || true
+        fi
+    fi
+else
+    echo -e "${GREEN}✓ Powerlevel10k already configured${NC}"
+fi
+
+# Compile zsh files for performance
+echo -e "${YELLOW}Compiling zsh files for faster startup...${NC}"
+if [ -f "$DOTFILES_DIR/scripts/compile-zsh-files.sh" ]; then
+    # Make the script executable and run it
+    chmod +x "$DOTFILES_DIR/scripts/compile-zsh-files.sh"
+    zsh "$DOTFILES_DIR/scripts/compile-zsh-files.sh" || echo -e "${YELLOW}! Zsh compilation had some issues (non-critical)${NC}"
+    echo -e "${GREEN}✓ Zsh files compiled for performance${NC}"
+else
+    echo -e "${YELLOW}! Zsh compilation script not found, compiling manually...${NC}"
+    # Fallback compilation
+    [[ -f ~/.zshrc ]] && zcompile ~/.zshrc || true
+    [[ -f ~/.p10k.zsh ]] && zcompile ~/.p10k.zsh || true
+    [[ -f ~/.oh-my-zsh/oh-my-zsh.sh ]] && zcompile ~/.oh-my-zsh/oh-my-zsh.sh || true
+fi
 
 # Configure Git
 if [ ! -f "$HOME/.gitconfig" ] || ! grep -q "user.name" "$HOME/.gitconfig" 2>/dev/null; then
@@ -583,8 +845,8 @@ else
     echo -e "${GREEN}✓ Hyprland desktop entry exists${NC}"
 fi
 
-# Final system configuration
-step "Final configuration..."
+# Final system configuration and verification
+step "Final configuration and verification..."
 echo -e "${GREEN}✓ All configurations complete${NC}"
 
 echo -e "\n${GREEN}╔════════════════════════════════════════╗${NC}"
@@ -605,10 +867,33 @@ echo -e "  ${GREEN}Alt + [1-9,A-Z]${NC} - Switch workspace"
 echo -e "\n${YELLOW}Workspaces:${NC}"
 echo -e "  ${GREEN}C${NC} - Chrome  ${GREEN}S${NC} - Slack  ${GREEN}F${NC} - Figma"
 
+# Final verification of critical tools
+echo -e "\n${YELLOW}Performing final verification...${NC}"
+CRITICAL_COMMANDS=("hyprland" "fuzzel" "mako" "swww" "waybar" "fnm" "node" "npm")
+FAILED_COMMANDS=()
+
+for cmd in "${CRITICAL_COMMANDS[@]}"; do
+    if ! command -v "$cmd" &> /dev/null; then
+        FAILED_COMMANDS+=("$cmd")
+        echo -e "${RED}✗ $cmd not available in PATH${NC}"
+    else
+        echo -e "${GREEN}✓ $cmd verified${NC}"
+    fi
+done
+
+if [ ${#FAILED_COMMANDS[@]} -gt 0 ]; then
+    echo -e "\n${RED}CRITICAL ERROR: The following commands are not available:${NC}"
+    printf '  %s\n' "${FAILED_COMMANDS[@]}"
+    echo -e "\n${YELLOW}This indicates incomplete installation. Please check the logs above.${NC}"
+    exit 1
+fi
+
+echo -e "\n${GREEN}✓ All critical tools verified successfully!${NC}"
+
 # Important note about shell configuration
-echo -e "\n${YELLOW}IMPORTANT: To use Node.js/NVM:${NC}"
+echo -e "\n${YELLOW}IMPORTANT: To use Node.js/fnm in new terminals:${NC}"
 echo -e "1. Open a new terminal, OR"
 echo -e "2. Run: ${GREEN}source ~/.zshrc${NC}"
 echo
-echo -e "${YELLOW}If NVM/Node still not working:${NC}"
-echo -e "Run: ${GREEN}./scripts/fix-nvm.sh${NC}"
+echo -e "${YELLOW}fnm is 50x faster than nvm!${NC}"
+echo -e "Your terminal startup is now optimized."

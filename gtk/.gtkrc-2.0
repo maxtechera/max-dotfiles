@@ -1,0 +1,27 @@
+# GTK 2.0 Configuration - Catppuccin Theme
+# This file configures the appearance of GTK 2.0 applications
+
+# Theme settings
+gtk-theme-name="Catppuccin-Mocha-Standard-Peach-Dark"
+gtk-icon-theme-name="Papirus-Dark"
+gtk-font-name="JetBrainsMono Nerd Font 11"
+gtk-cursor-theme-name="Catppuccin-Mocha-Dark-Cursors"
+gtk-cursor-theme-size=24
+
+# Color scheme (fallback for apps that don't use themes)
+gtk-color-scheme = "base_color:#1e1e2e\nfg_color:#cdd6f4\ntooltip_fg_color:#cdd6f4\nselected_bg_color:#fab387\nselected_fg_color:#1e1e2e\ntext_color:#cdd6f4\nbg_color:#313244\ntooltip_bg_color:#1e1e2e\ninsensitive_bg_color:#45475a\ninsensitive_fg_color:#6c7086"
+
+# Application behavior
+gtk-toolbar-style=GTK_TOOLBAR_BOTH_HORIZ
+gtk-toolbar-icon-size=GTK_ICON_SIZE_LARGE_TOOLBAR
+gtk-button-images=1
+gtk-menu-images=1
+gtk-enable-event-sounds=0
+gtk-enable-input-feedback-sounds=0
+
+# Font and rendering
+gtk-xft-antialias=1
+gtk-xft-hinting=1
+gtk-xft-hintstyle="hintslight"
+gtk-xft-rgba="rgb"
+gtk-xft-dpi=96

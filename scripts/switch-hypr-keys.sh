@@ -9,9 +9,8 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 HYPR_DIR="$HOME/.config/hypr"
-ALT_CONFIG="$HYPR_DIR/hyprland.conf"
-SUPER_CONFIG="$HYPR_DIR/hyprland-super.conf"
-CURRENT_CONFIG="$HYPR_DIR/hyprland-current.conf"
+CANONICAL_CONFIG="$HYPR_DIR/hyprland.conf"
+ALT_CONFIG="$HYPR_DIR/backups/hyprland.conf.alt-backup"
 
 echo -e "${BLUE}Hyprland Keybinding Switcher${NC}"
 echo "============================="

@@ -1,0 +1,28 @@
+# Max-Dev Git Ignore
+# This repo tracks the organization and structure of ~/dev
+# But NOT the contents of individual git repositories
+
+# Ignore all directories that contain git repositories
+# The .dev-manifest.json will track what repos should be where
+*/.git/
+*/.git
+
+# Ignore common development artifacts
+node_modules/
+.DS_Store
+.vscode/
+.idea/
+*.log
+.env
+.env.local
+
+# But track organizational files
+!.gitkeep
+!README.md
+!.dev-manifest.json
+!.gitignore
+
+# Track documentation and notes
+!*.md
+!docs/
+!scripts/

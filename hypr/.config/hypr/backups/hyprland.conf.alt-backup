@@ -1,6 +1,6 @@
-# Hyprland Configuration - Canonical Setup
-# This is the single source of truth for Hyprland configuration
-# Uses Super (Windows) key as primary modifier and fuzzel as launcher
+# Hyprland Configuration
+# Performance-optimized setup with minimal animations
+# Matching Aerospace keybindings from macOS
 
 # Monitor setup (adjust to your setup)
 monitor=,preferred,auto,1
@@ -21,7 +21,7 @@ exec-once = swww img ~/Pictures/wallpaper.jpg
 # Some default env vars
 env = XCURSOR_SIZE,24
 env = QT_QPA_PLATFORMTHEME,qt5ct
-env = WLR_NO_HARDWARE_CURSORS,1
+env = WLR_NO_HARDWARE_CURSORS,1 # Fixes cursor issues on some systems
 
 # Input configuration
 input {
@@ -42,11 +42,11 @@ input {
     sensitivity = 0
 }
 
-# General settings
+# General settings - Match Aerospace (no gaps) + Performance
 general {
-    gaps_in = 5
-    gaps_out = 10
-    border_size = 2
+    gaps_in = 0
+    gaps_out = 0
+    border_size = 1
     col.active_border = rgba(88c0d0ee)
     col.inactive_border = rgba(4c566aaa)
     
@@ -56,46 +56,46 @@ general {
     no_cursor_warps = true
 }
 
-# Decoration
+# Decoration - Optimized for performance
 decoration {
-    rounding = 8
+    rounding = 0  # No rounding for performance
     
     blur {
-        enabled = true
+        enabled = false  # Disable blur for performance
         size = 3
         passes = 1
     }
 
-    # Shadow settings moved to window rules in newer Hyprland
-    # Use windowrulev2 = noshadow, class:^(kitty)$ to disable shadows per window
+    drop_shadow = false  # Disable shadows for performance
     
     # Opacity removed - use window rules if needed
 }
 
-# Animations
+# Animations - Minimal for performance
 animations {
-    enabled = true
+    enabled = false  # Disable all animations for maximum performance
     
-    bezier = myBezier, 0.05, 0.9, 0.1, 1.05
-    
-    animation = windows, 1, 3, myBezier
-    animation = windowsOut, 1, 3, default, popin 80%
-    animation = border, 1, 5, default
-    animation = borderangle, 1, 4, default
-    animation = fade, 1, 3, default
-    animation = workspaces, 1, 3, default
+    # If you want minimal animations, uncomment below and comment above
+    # enabled = true
+    # bezier = instant, 0, 1, 0, 1
+    # animation = windows, 1, 0.5, instant
+    # animation = windowsOut, 1, 0.5, instant
+    # animation = border, 0
+    # animation = borderangle, 0
+    # animation = fade, 0
+    # animation = workspaces, 1, 0.5, instant
 }
 
 # Layout configurations
 dwindle {
     pseudotile = true
     preserve_split = true
-    no_gaps_when_only = false
+    no_gaps_when_only = true
 }
 
 master {
     new_is_master = true
-    no_gaps_when_only = false
+    no_gaps_when_only = true
 }
 
 # Window rules
@@ -104,31 +104,31 @@ windowrulev2 = float,class:^(pavucontrol)$
 windowrulev2 = float,class:^(nm-connection-editor)$
 windowrulev2 = float,class:^(blueman-manager)$
 
-# Workspace rules
+# Workspace rules - Matching Aerospace assignments
 windowrulev2 = workspace 3,class:^(google-chrome)$
 windowrulev2 = workspace 3,class:^(chromium)$
-windowrulev2 = workspace 4,class:^(Slack)$
-windowrulev2 = workspace 5,class:^(whatsapp-for-linux)$
+windowrulev2 = workspace 19,class:^(Slack)$
+windowrulev2 = workspace 13,class:^(whatsapp-for-linux)$
+windowrulev2 = workspace 13,class:^(whatsapp)$
 windowrulev2 = workspace 6,class:^(figma)$
-windowrulev2 = workspace 7,class:^(postman)$
-windowrulev2 = workspace 9,class:^(spotify)$
+windowrulev2 = workspace 16,class:^(postman)$
+windowrulev2 = workspace 15,class:^(spotify)$
 
-# Set mod key (Super/Windows key - Linux standard)
-$mainMod = SUPER
+# Set mod key (Alt to match Aerospace)
+$mainMod = ALT
 
 # Key bindings - Core
 bind = $mainMod, RETURN, exec, ghostty
-bind = $mainMod, Q, killactive,
-bind = $mainMod SHIFT, E, exit,
-bind = $mainMod, E, exec, thunar
+bind = $mainMod SHIFT, Q, killactive,
+bind = $mainMod SHIFT CTRL, Q, exit,
 bind = $mainMod, F, fullscreen,
-bind = $mainMod, V, togglefloating,
+bind = $mainMod SHIFT, F, togglefloating,
 bind = $mainMod, P, pseudo, # dwindle
 bind = $mainMod, J, togglesplit, # dwindle
 
-# Fuzzel - Ultra fast minimal launcher (replaces rofi)
-bind = $mainMod, D, exec, fuzzel
+# Fuzzel - Ultra fast minimal launcher
 bind = $mainMod, SPACE, exec, fuzzel
+bind = $mainMod, D, exec, fuzzel
 
 # Focus windows (vim-style)
 bind = $mainMod, H, movefocus, l
@@ -143,12 +143,10 @@ bind = $mainMod SHIFT, K, movewindow, u
 bind = $mainMod SHIFT, J, movewindow, d
 
 # Resize windows
-bind = $mainMod CTRL, H, resizeactive, -20 0
-bind = $mainMod CTRL, L, resizeactive, 20 0
-bind = $mainMod CTRL, K, resizeactive, 0 -20
-bind = $mainMod CTRL, J, resizeactive, 0 20
+bind = $mainMod, minus, exec, hyprctl dispatch splitratio -0.1
+bind = $mainMod, equal, exec, hyprctl dispatch splitratio 0.1
 
-# Workspace switching
+# Workspace switching (numbers)
 bind = $mainMod, 1, workspace, 1
 bind = $mainMod, 2, workspace, 2
 bind = $mainMod, 3, workspace, 3
@@ -160,7 +158,35 @@ bind = $mainMod, 8, workspace, 8
 bind = $mainMod, 9, workspace, 9
 bind = $mainMod, 0, workspace, 10
 
-# Move window to workspace
+# Workspace switching (letters - matching Aerospace)
+bind = $mainMod, A, workspace, 11
+bind = $mainMod, B, workspace, 12
+bind = $mainMod, C, workspace, 3   # Chrome
+bind = $mainMod, D, workspace, 14
+bind = $mainMod, E, workspace, 15
+bind = $mainMod, F, workspace, 6   # Figma
+bind = $mainMod, G, workspace, 17
+bind = $mainMod, H, workspace, 18
+bind = $mainMod, I, workspace, 19
+bind = $mainMod, J, workspace, 20
+bind = $mainMod, K, workspace, 21
+bind = $mainMod, L, workspace, 22
+bind = $mainMod, M, workspace, 13  # Messages/WhatsApp
+bind = $mainMod, N, workspace, 24
+bind = $mainMod, O, workspace, 15  # Spotify
+bind = $mainMod, P, workspace, 16  # Postman
+bind = $mainMod, Q, workspace, 27
+bind = $mainMod, R, workspace, 28
+bind = $mainMod, S, workspace, 19  # Slack
+bind = $mainMod, T, workspace, 30
+bind = $mainMod, U, workspace, 31
+bind = $mainMod, V, workspace, 32
+bind = $mainMod, W, workspace, 33
+bind = $mainMod, X, workspace, 34
+bind = $mainMod, Y, workspace, 35
+bind = $mainMod, Z, workspace, 36
+
+# Move window to workspace (numbers)
 bind = $mainMod SHIFT, 1, movetoworkspace, 1
 bind = $mainMod SHIFT, 2, movetoworkspace, 2
 bind = $mainMod SHIFT, 3, movetoworkspace, 3
@@ -172,9 +198,36 @@ bind = $mainMod SHIFT, 8, movetoworkspace, 8
 bind = $mainMod SHIFT, 9, movetoworkspace, 9
 bind = $mainMod SHIFT, 0, movetoworkspace, 10
 
-# Special workspace (scratchpad)
-bind = $mainMod, S, togglespecialworkspace, magic
-bind = $mainMod SHIFT, S, movetoworkspace, special:magic
+# Move window to workspace (letters)
+bind = $mainMod SHIFT, A, movetoworkspace, 11
+bind = $mainMod SHIFT, B, movetoworkspace, 12
+bind = $mainMod SHIFT, C, movetoworkspace, 3
+bind = $mainMod SHIFT, D, movetoworkspace, 14
+bind = $mainMod SHIFT, E, movetoworkspace, 15
+bind = $mainMod SHIFT, F, movetoworkspace, 6
+bind = $mainMod SHIFT, G, movetoworkspace, 17
+bind = $mainMod SHIFT, H, movetoworkspace, 18
+bind = $mainMod SHIFT, I, movetoworkspace, 19
+bind = $mainMod SHIFT, J, movetoworkspace, 20
+bind = $mainMod SHIFT, K, movetoworkspace, 21
+bind = $mainMod SHIFT, L, movetoworkspace, 22
+bind = $mainMod SHIFT, M, movetoworkspace, 13
+bind = $mainMod SHIFT, N, movetoworkspace, 24
+bind = $mainMod SHIFT, O, movetoworkspace, 15
+bind = $mainMod SHIFT, P, movetoworkspace, 16
+bind = $mainMod SHIFT, Q, movetoworkspace, 27
+bind = $mainMod SHIFT, R, movetoworkspace, 28
+bind = $mainMod SHIFT, S, movetoworkspace, 19
+bind = $mainMod SHIFT, T, movetoworkspace, 30
+bind = $mainMod SHIFT, U, movetoworkspace, 31
+bind = $mainMod SHIFT, V, movetoworkspace, 32
+bind = $mainMod SHIFT, W, movetoworkspace, 33
+bind = $mainMod SHIFT, X, movetoworkspace, 34
+bind = $mainMod SHIFT, Y, movetoworkspace, 35
+bind = $mainMod SHIFT, Z, movetoworkspace, 36
+
+# Tab between workspaces
+bind = $mainMod, TAB, workspace, previous
 
 # Scroll through existing workspaces
 bind = $mainMod, mouse_down, workspace, e+1
@@ -200,11 +253,6 @@ bind = , XF86AudioPrev, exec, playerctl previous
 # Brightness
 bind = , XF86MonBrightnessUp, exec, brightnessctl s +10%
 bind = , XF86MonBrightnessDown, exec, brightnessctl s 10%-
-
-# Utility bindings
-bind = $mainMod, R, exec, hyprctl reload
-bind = $mainMod, L, exec, swaylock
-bind = $mainMod SHIFT, P, exec, wlogout
 
 # Lid switch
 bindl = , switch:on:Lid Switch, exec, hyprctl keyword monitor "eDP-1, disable"

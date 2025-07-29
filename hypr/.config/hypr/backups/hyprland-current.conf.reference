@@ -1,6 +1,6 @@
-# Hyprland Configuration - Canonical Setup
-# This is the single source of truth for Hyprland configuration
-# Uses Super (Windows) key as primary modifier and fuzzel as launcher
+# Hyprland Configuration - Linux Standard (Super key)
+# This version uses Super (Windows key) to avoid conflicts
+# Source this instead of hyprland.conf if you want Linux standards
 
 # Monitor setup (adjust to your setup)
 monitor=,preferred,auto,1
@@ -126,7 +126,7 @@ bind = $mainMod, V, togglefloating,
 bind = $mainMod, P, pseudo, # dwindle
 bind = $mainMod, J, togglesplit, # dwindle
 
-# Fuzzel - Ultra fast minimal launcher (replaces rofi)
+# Fuzzel - Ultra fast minimal launcher
 bind = $mainMod, D, exec, fuzzel
 bind = $mainMod, SPACE, exec, fuzzel
 
@@ -200,6 +200,12 @@ bind = , XF86AudioPrev, exec, playerctl previous
 # Brightness
 bind = , XF86MonBrightnessUp, exec, brightnessctl s +10%
 bind = , XF86MonBrightnessDown, exec, brightnessctl s 10%-
+
+# System monitoring
+bind = $mainMod, T, exec, ghostty -e btop
+bind = $mainMod SHIFT, ESCAPE, exec, ghostty -e btop
+bind = $mainMod CTRL, T, exec, ghostty -e htop
+bind = $mainMod, I, exec, ghostty -e btop --utf-force
 
 # Utility bindings
 bind = $mainMod, R, exec, hyprctl reload

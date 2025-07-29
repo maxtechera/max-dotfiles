@@ -1,0 +1,282 @@
+# Hyprland Configuration
+# Performance-optimized setup with minimal animations
+# Matching Aerospace keybindings from macOS
+
+# Monitor setup with HDR (adjust to your setup)
+# For HDR OLED: monitor = HDMI-A-1, 3840x2160@120, 0x0, 1, cm, auto, sdrbrightness, 1.2
+monitor=,preferred,auto,1
+
+# Execute at launch
+exec-once = waybar
+exec-once = swww init
+exec-once = mako
+exec-once = /usr/lib/polkit-kde-authentication-agent-1
+exec-once = dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+exec-once = systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+
+# Dark mode for GTK/Qt applications
+exec-once = gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark"
+exec-once = gsettings set org.gnome.desktop.interface color-scheme "prefer-dark"
+
+# Set wallpaper - minimalistic background
+exec-once = mkdir -p ~/Pictures/Screenshots
+# You can set your own minimalistic wallpaper here
+exec-once = swww img ~/Pictures/wallpaper.jpg
+
+# Some default env vars
+env = XCURSOR_SIZE,24
+env = QT_QPA_PLATFORMTHEME,qt6ct
+env = WLR_NO_HARDWARE_CURSORS,1 # Fixes cursor issues on some systems
+# Dark theme for Qt applications
+env = QT_STYLE_OVERRIDE,Adwaita-Dark
+
+# Input configuration
+input {
+    kb_layout = us
+    kb_variant =
+    kb_model =
+    kb_options =
+    kb_rules =
+
+    follow_mouse = 1
+
+    touchpad {
+        natural_scroll = true
+        disable_while_typing = true
+        tap-to-click = true
+    }
+
+    sensitivity = 0
+}
+
+# General settings - Black theme with subtle borders
+general {
+    gaps_in = 5
+    gaps_out = 10
+    border_size = 1
+    col.active_border = rgba(ffffff33)  # Very subtle white border
+    col.inactive_border = rgba(ffffff0D)  # Almost invisible border
+    
+    layout = dwindle
+    
+    allow_tearing = false
+    # no_cursor_warps removed in 0.50.x
+}
+
+# Decoration - Black with blur and transparency
+decoration {
+    rounding = 10  # Rounded corners for modern look
+    
+    blur {
+        enabled = true
+        size = 8
+        passes = 3
+        new_optimizations = true
+        xray = true
+        contrast = 1.0
+        brightness = 0.8
+        vibrancy = 0.2
+        vibrancy_darkness = 0.0
+    }
+
+    # Subtle shadows
+    drop_shadow = true
+    shadow_range = 20
+    shadow_render_power = 2
+    col.shadow = rgba(00000055)
+    
+    # Transparency settings
+    active_opacity = 0.95
+    inactive_opacity = 0.9
+    fullscreen_opacity = 1.0
+}
+
+# Animations - Instant
+animations {
+    enabled = false  # Disable for instant response
+}
+
+# Misc settings
+misc {
+    vfr = true  # Variable framerate
+    disable_hyprland_logo = true
+    disable_splash_rendering = true
+    force_default_wallpaper = 0  # Disable default wallpaper
+}
+
+# Layout configurations
+dwindle {
+    pseudotile = true
+    preserve_split = true
+    # no_gaps_when_only deprecated
+}
+
+master {
+    new_status = master
+    # no_gaps_when_only deprecated
+}
+
+# Window rules
+windowrulev2 = noinitialfocus,class:^(steam)$
+windowrulev2 = float,class:^(pavucontrol)$
+windowrulev2 = float,class:^(nm-connection-editor)$
+windowrulev2 = float,class:^(blueman-manager)$
+
+# Terminal transparency
+windowrulev2 = opacity 0.85 0.85,class:^(ghostty)$
+windowrulev2 = opacity 0.85 0.85,class:^(kitty)$
+windowrulev2 = opacity 0.85 0.85,class:^(alacritty)$
+
+# Workspace rules - Matching Aerospace assignments
+windowrulev2 = workspace 3,class:^(google-chrome)$
+windowrulev2 = workspace 3,class:^(chromium)$
+windowrulev2 = workspace 19,class:^(Slack)$
+windowrulev2 = workspace 13,class:^(whatsapp-for-linux)$
+windowrulev2 = workspace 13,class:^(whatsapp)$
+windowrulev2 = workspace 6,class:^(figma)$
+windowrulev2 = workspace 16,class:^(postman)$
+windowrulev2 = workspace 15,class:^(spotify)$
+
+# Set mod key (Alt to match Aerospace)
+$mainMod = ALT
+
+# Key bindings - Core
+bind = $mainMod, RETURN, exec, ghostty
+bind = $mainMod SHIFT, Q, killactive,
+bind = $mainMod SHIFT CTRL, Q, exit,
+bind = $mainMod, F, fullscreen,
+bind = $mainMod SHIFT, F, togglefloating,
+bind = $mainMod, P, pseudo, # dwindle
+bind = $mainMod, J, togglesplit, # dwindle
+
+# Fuzzel - Ultra fast minimal launcher
+bind = $mainMod, SPACE, exec, fuzzel
+bind = $mainMod, D, exec, fuzzel
+
+# Focus windows (vim-style)
+bind = $mainMod, H, movefocus, l
+bind = $mainMod, L, movefocus, r
+bind = $mainMod, K, movefocus, u
+bind = $mainMod, J, movefocus, d
+
+# Move windows
+bind = $mainMod SHIFT, H, movewindow, l
+bind = $mainMod SHIFT, L, movewindow, r
+bind = $mainMod SHIFT, K, movewindow, u
+bind = $mainMod SHIFT, J, movewindow, d
+
+# Resize windows
+bind = $mainMod, minus, exec, hyprctl dispatch splitratio -0.1
+bind = $mainMod, equal, exec, hyprctl dispatch splitratio 0.1
+
+# Workspace switching (numbers)
+bind = $mainMod, 1, workspace, 1
+bind = $mainMod, 2, workspace, 2
+bind = $mainMod, 3, workspace, 3
+bind = $mainMod, 4, workspace, 4
+bind = $mainMod, 5, workspace, 5
+bind = $mainMod, 6, workspace, 6
+bind = $mainMod, 7, workspace, 7
+bind = $mainMod, 8, workspace, 8
+bind = $mainMod, 9, workspace, 9
+bind = $mainMod, 0, workspace, 10
+
+# Workspace switching (letters - matching Aerospace)
+bind = $mainMod, A, workspace, 11
+bind = $mainMod, B, workspace, 12
+bind = $mainMod, C, workspace, 3   # Chrome
+bind = $mainMod, D, workspace, 14
+bind = $mainMod, E, workspace, 15
+bind = $mainMod, F, workspace, 6   # Figma
+bind = $mainMod, G, workspace, 17
+bind = $mainMod, H, workspace, 18
+bind = $mainMod, I, workspace, 19
+bind = $mainMod, J, workspace, 20
+bind = $mainMod, K, workspace, 21
+bind = $mainMod, L, workspace, 22
+bind = $mainMod, M, workspace, 13  # Messages/WhatsApp
+bind = $mainMod, N, workspace, 24
+bind = $mainMod, O, workspace, 15  # Spotify
+bind = $mainMod, P, workspace, 16  # Postman
+bind = $mainMod, Q, workspace, 27
+bind = $mainMod, R, workspace, 28
+bind = $mainMod, S, workspace, 19  # Slack
+bind = $mainMod, T, workspace, 30
+bind = $mainMod, U, workspace, 31
+bind = $mainMod, V, workspace, 32
+bind = $mainMod, W, workspace, 33
+bind = $mainMod, X, workspace, 34
+bind = $mainMod, Y, workspace, 35
+bind = $mainMod, Z, workspace, 36
+
+# Move window to workspace (numbers)
+bind = $mainMod SHIFT, 1, movetoworkspace, 1
+bind = $mainMod SHIFT, 2, movetoworkspace, 2
+bind = $mainMod SHIFT, 3, movetoworkspace, 3
+bind = $mainMod SHIFT, 4, movetoworkspace, 4
+bind = $mainMod SHIFT, 5, movetoworkspace, 5
+bind = $mainMod SHIFT, 6, movetoworkspace, 6
+bind = $mainMod SHIFT, 7, movetoworkspace, 7
+bind = $mainMod SHIFT, 8, movetoworkspace, 8
+bind = $mainMod SHIFT, 9, movetoworkspace, 9
+bind = $mainMod SHIFT, 0, movetoworkspace, 10
+
+# Move window to workspace (letters)
+bind = $mainMod SHIFT, A, movetoworkspace, 11
+bind = $mainMod SHIFT, B, movetoworkspace, 12
+bind = $mainMod SHIFT, C, movetoworkspace, 3
+bind = $mainMod SHIFT, D, movetoworkspace, 14
+bind = $mainMod SHIFT, E, movetoworkspace, 15
+bind = $mainMod SHIFT, F, movetoworkspace, 6
+bind = $mainMod SHIFT, G, movetoworkspace, 17
+bind = $mainMod SHIFT, H, movetoworkspace, 18
+bind = $mainMod SHIFT, I, movetoworkspace, 19
+bind = $mainMod SHIFT, J, movetoworkspace, 20
+bind = $mainMod SHIFT, K, movetoworkspace, 21
+bind = $mainMod SHIFT, L, movetoworkspace, 22
+bind = $mainMod SHIFT, M, movetoworkspace, 13
+bind = $mainMod SHIFT, N, movetoworkspace, 24
+bind = $mainMod SHIFT, O, movetoworkspace, 15
+bind = $mainMod SHIFT, P, movetoworkspace, 16
+bind = $mainMod SHIFT, Q, movetoworkspace, 27
+bind = $mainMod SHIFT, R, movetoworkspace, 28
+bind = $mainMod SHIFT, S, movetoworkspace, 19
+bind = $mainMod SHIFT, T, movetoworkspace, 30
+bind = $mainMod SHIFT, U, movetoworkspace, 31
+bind = $mainMod SHIFT, V, movetoworkspace, 32
+bind = $mainMod SHIFT, W, movetoworkspace, 33
+bind = $mainMod SHIFT, X, movetoworkspace, 34
+bind = $mainMod SHIFT, Y, movetoworkspace, 35
+bind = $mainMod SHIFT, Z, movetoworkspace, 36
+
+# Tab between workspaces
+bind = $mainMod, TAB, workspace, previous
+
+# Scroll through existing workspaces
+bind = $mainMod, mouse_down, workspace, e+1
+bind = $mainMod, mouse_up, workspace, e-1
+
+# Move/resize windows with mouse
+bindm = $mainMod, mouse:272, movewindow
+bindm = $mainMod, mouse:273, resizewindow
+
+# Screenshot bindings
+bind = , Print, exec, grimblast --notify copysave area ~/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png
+bind = SHIFT, Print, exec, grimblast --notify copysave screen ~/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png
+bind = CTRL, Print, exec, grimblast --notify copysave active ~/Pictures/Screenshots/$(date +%Y%m%d_%H%M%S).png
+
+# Media keys
+bind = , XF86AudioRaiseVolume, exec, pamixer -i 5
+bind = , XF86AudioLowerVolume, exec, pamixer -d 5
+bind = , XF86AudioMute, exec, pamixer -t
+bind = , XF86AudioPlay, exec, playerctl play-pause
+bind = , XF86AudioNext, exec, playerctl next
+bind = , XF86AudioPrev, exec, playerctl previous
+
+# Brightness
+bind = , XF86MonBrightnessUp, exec, brightnessctl s +10%
+bind = , XF86MonBrightnessDown, exec, brightnessctl s 10%-
+
+# Lid switch
+bindl = , switch:on:Lid Switch, exec, hyprctl keyword monitor "eDP-1, disable"
+bindl = , switch:off:Lid Switch, exec, hyprctl keyword monitor "eDP-1, preferred, auto, 1"

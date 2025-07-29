@@ -1,0 +1,14 @@
+Terminal Startup Profile Summary
+================================
+Date: Tue Jul 29 04:38:28 PM -03 2025
+Iterations: 5
+
+Average Times:
+- Zsh startup: ms
+- Ghostty overhead: ms
+- Total startup: ms
+
+Raw Data:
+Zsh times: 749 581 567 563 553
+Ghostty times: -736 -567 -554 -550 -540
+Combined times: 13 14 13 13 13
