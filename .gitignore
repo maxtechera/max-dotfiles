@@ -19,3 +19,6 @@ __pycache__/
 
 # System files
 Thumbs.db
+
+# Dev directory (will be a private submodule)
+/dev/
