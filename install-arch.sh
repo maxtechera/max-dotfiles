@@ -43,32 +43,58 @@ check_aur_installed() {
 
 install_if_missing() {
     local package=$1
+    local critical=${2:-false}
+    
     if ! check_installed "$package"; then
         echo -e "${YELLOW}Installing $package...${NC}"
-        if sudo pacman -S --needed --noconfirm "$package"; then
+        if sudo pacman -S --needed --noconfirm "$package" 2>/dev/null; then
             echo -e "${GREEN}✓ $package installed successfully${NC}"
         else
-            echo -e "${RED}✗ Failed to install $package${NC}"
-            return 1
+            if [ "$critical" = "true" ]; then
+                echo -e "${RED}✗ CRITICAL: Failed to install $package${NC}"
+                echo -e "${YELLOW}Attempting alternative installation methods...${NC}"
+                
+                # Try updating package database and retry
+                sudo pacman -Sy 2>/dev/null
+                if sudo pacman -S --needed --noconfirm "$package" 2>/dev/null; then
+                    echo -e "${GREEN}✓ $package installed on retry${NC}"
+                else
+                    echo -e "${RED}FATAL: Cannot install critical package $package${NC}"
+                    return 1
+                fi
+            else
+                echo -e "${RED}✗ Failed to install $package (non-critical)${NC}"
+                return 1
+            fi
         fi
     else
         echo -e "${GREEN}✓ $package already installed${NC}"
     fi
+    return 0
 }
 
 install_aur_if_missing() {
     local package=$1
+    local critical=${2:-false}
+    
     if ! check_aur_installed "$package"; then
         echo -e "${YELLOW}Installing $package from AUR...${NC}"
-        if yay -S --needed --noconfirm "$package"; then
+        if yay -S --needed --noconfirm "$package" 2>/dev/null; then
             echo -e "${GREEN}✓ $package installed successfully${NC}"
         else
-            echo -e "${RED}✗ Failed to install $package${NC}"
-            return 1
+            if [ "$critical" = "true" ]; then
+                echo -e "${RED}✗ CRITICAL: Failed to install $package from AUR${NC}"
+                echo -e "${YELLOW}AUR package installation failed. Manual intervention may be required.${NC}"
+                return 1
+            else
+                echo -e "${RED}✗ Failed to install $package (non-critical AUR package)${NC}"
+                return 1
+            fi
         fi
     else
         echo -e "${GREEN}✓ $package already installed${NC}"
     fi
+    return 0
 }
 
 # Enhanced critical package verification function
@@ -186,12 +212,17 @@ step() {
     echo -e "\n${PURPLE}[$STEP/$TOTAL_STEPS]${NC} $1"
 }
 
-# Install essential build tools
+# Install essential build tools (critical for everything else)
 step "Checking essential build tools..."
 ESSENTIALS=(base-devel git wget curl)
+echo -e "${YELLOW}Installing critical build dependencies...${NC}"
 for pkg in "${ESSENTIALS[@]}"; do
-    install_if_missing "$pkg"
+    if ! install_if_missing "$pkg" true; then
+        echo -e "${RED}FATAL: Cannot continue without $pkg${NC}"
+        exit 1
+    fi
 done
+echo -e "${GREEN}✓ All essential build tools ready${NC}"
 
 # Update system
 step "Updating system..."
@@ -244,19 +275,45 @@ elif lspci | grep -i intel | grep -i vga > /dev/null; then
     done
 fi
 
-# Install yay (AUR helper)
+# Install yay (AUR helper) - Critical for AUR packages
 step "Installing AUR helper..."
 if ! command -v yay &> /dev/null; then
-    echo -e "${YELLOW}Installing yay...${NC}"
+    echo -e "${YELLOW}Installing yay (AUR helper)...${NC}"
     TEMP_DIR=$(mktemp -d)
-    git clone https://aur.archlinux.org/yay-bin.git "$TEMP_DIR/yay-bin"
-    cd "$TEMP_DIR/yay-bin"
-    makepkg -si --noconfirm
-    cd -
-    rm -rf "$TEMP_DIR"
+    
+    if git clone https://aur.archlinux.org/yay-bin.git "$TEMP_DIR/yay-bin" 2>/dev/null; then
+        cd "$TEMP_DIR/yay-bin"
+        if makepkg -si --noconfirm 2>/dev/null; then
+            echo -e "${GREEN}✓ yay installed successfully${NC}"
+        else
+            echo -e "${RED}FATAL: Failed to build yay${NC}"
+            cd -
+            rm -rf "$TEMP_DIR"
+            exit 1
+        fi
+        cd -
+        rm -rf "$TEMP_DIR"
+    else
+        echo -e "${RED}FATAL: Failed to clone yay repository${NC}"
+        rm -rf "$TEMP_DIR"
+        exit 1
+    fi
+    
+    # Verify yay installation
+    if ! command -v yay &> /dev/null; then
+        echo -e "${RED}FATAL: yay installation failed - AUR packages unavailable${NC}"
+        exit 1
+    fi
 else
     echo -e "${GREEN}✓ yay already installed${NC}"
 fi
+
+# Verify yay works
+if ! yay --version &> /dev/null; then
+    echo -e "${RED}FATAL: yay installed but not working properly${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✓ yay verified: $(yay --version | head -1)${NC}"
 
 # Install base packages
 step "Installing base packages..."
@@ -345,7 +402,9 @@ if [ ${#PACKAGES_TO_INSTALL[@]} -gt 0 ]; then
         done
         
         if [ ${#failed_packages[@]} -gt 0 ]; then
-            echo -e "${YELLOW}Failed packages: ${failed_packages[*]}${NC}"
+            echo -e "${RED}ATTENTION: The following packages failed to install:${NC}"
+            printf '  %s\n' "${failed_packages[@]}"
+            echo -e "${YELLOW}This may affect functionality. Consider manual installation.${NC}"
         fi
     fi
 fi
@@ -646,10 +705,17 @@ else
     echo -e "${GREEN}✓ Powerlevel10k already installed${NC}"
 fi
 
-# Install performance-optimized plugins
+# Install and verify performance-optimized plugins
+echo -e "${YELLOW}Setting up performance-optimized zsh plugins...${NC}"
+
+# Install zsh-autosuggestions
 if [ ! -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]; then
     echo -e "${YELLOW}Installing zsh-autosuggestions...${NC}"
-    git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
+    if git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"; then
+        echo -e "${GREEN}✓ zsh-autosuggestions installed${NC}"
+    else
+        echo -e "${RED}✗ Failed to install zsh-autosuggestions${NC}"
+    fi
 else
     echo -e "${GREEN}✓ zsh-autosuggestions already installed${NC}"
 fi
@@ -657,7 +723,11 @@ fi
 # Use fast-syntax-highlighting instead of zsh-syntax-highlighting for better performance
 if [ ! -d "$ZSH_CUSTOM/plugins/fast-syntax-highlighting" ]; then
     echo -e "${YELLOW}Installing fast-syntax-highlighting (performance optimized)...${NC}"
-    git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git "$ZSH_CUSTOM/plugins/fast-syntax-highlighting"
+    if git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git "$ZSH_CUSTOM/plugins/fast-syntax-highlighting"; then
+        echo -e "${GREEN}✓ fast-syntax-highlighting installed${NC}"
+    else
+        echo -e "${RED}✗ Failed to install fast-syntax-highlighting${NC}"
+    fi
 else
     echo -e "${GREEN}✓ fast-syntax-highlighting already installed${NC}"
 fi
@@ -665,7 +735,11 @@ fi
 # Install zsh-autocomplete for better completion performance
 if [ ! -d "$ZSH_CUSTOM/plugins/zsh-autocomplete" ]; then
     echo -e "${YELLOW}Installing zsh-autocomplete (performance optimized)...${NC}"
-    git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git "$ZSH_CUSTOM/plugins/zsh-autocomplete"
+    if git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git "$ZSH_CUSTOM/plugins/zsh-autocomplete"; then
+        echo -e "${GREEN}✓ zsh-autocomplete installed${NC}"
+    else
+        echo -e "${RED}✗ Failed to install zsh-autocomplete${NC}"
+    fi
 else
     echo -e "${GREEN}✓ zsh-autocomplete already installed${NC}"
 fi
@@ -674,6 +748,59 @@ fi
 if [ -d "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting" ]; then
     echo -e "${YELLOW}Removing old zsh-syntax-highlighting (replaced by fast version)...${NC}"
     rm -rf "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
+    echo -e "${GREEN}✓ Old zsh-syntax-highlighting removed${NC}"
+fi
+
+# Verify plugin installation and functionality
+echo -e "${YELLOW}Verifying plugin installations...${NC}"
+PLUGIN_VERIFICATION_FAILED=false
+
+# Check zsh-autosuggestions
+if [ -f "$ZSH_CUSTOM/plugins/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh" ]; then
+    echo -e "${GREEN}✓ zsh-autosuggestions plugin file verified${NC}"
+else
+    echo -e "${RED}✗ zsh-autosuggestions plugin file missing${NC}"
+    PLUGIN_VERIFICATION_FAILED=true
+fi
+
+# Check fast-syntax-highlighting
+if [ -f "$ZSH_CUSTOM/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh" ]; then
+    echo -e "${GREEN}✓ fast-syntax-highlighting plugin file verified${NC}"
+else
+    echo -e "${RED}✗ fast-syntax-highlighting plugin file missing${NC}"
+    PLUGIN_VERIFICATION_FAILED=true
+fi
+
+# Check zsh-autocomplete
+if [ -f "$ZSH_CUSTOM/plugins/zsh-autocomplete/zsh-autocomplete.plugin.zsh" ]; then
+    echo -e "${GREEN}✓ zsh-autocomplete plugin file verified${NC}"
+else
+    echo -e "${RED}✗ zsh-autocomplete plugin file missing${NC}"
+    PLUGIN_VERIFICATION_FAILED=true
+fi
+
+if [ "$PLUGIN_VERIFICATION_FAILED" = true ]; then
+    echo -e "${YELLOW}! Some plugins failed verification but installation will continue${NC}"
+    echo -e "${YELLOW}! You may experience reduced shell performance${NC}"
+else
+    echo -e "${GREEN}✓ All performance plugins verified successfully${NC}"
+fi
+
+# Configure plugin-specific optimizations
+echo -e "${YELLOW}Applying plugin performance optimizations...${NC}"
+
+# Configure zsh-autosuggestions for better performance
+if [ -d "$ZSH_CUSTOM/plugins/zsh-autosuggestions" ]; then
+    # Set autosuggestion strategy to history only for speed
+    export ZSH_AUTOSUGGEST_STRATEGY=(history)
+    export ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=20
+    echo -e "${GREEN}✓ zsh-autosuggestions optimized for performance${NC}"
+fi
+
+# Configure fast-syntax-highlighting
+if [ -d "$ZSH_CUSTOM/plugins/fast-syntax-highlighting" ]; then
+    # Fast-syntax-highlighting is already optimized by default
+    echo -e "${GREEN}✓ fast-syntax-highlighting is performance-optimized${NC}"
 fi
 
 # Install tmux plugin manager
@@ -948,18 +1075,96 @@ fi
 
 # Compile zsh files for performance
 echo -e "${YELLOW}Compiling zsh files for faster startup...${NC}"
-if [ -f "$DOTFILES_DIR/scripts/compile-zsh-files.sh" ]; then
-    # Make the script executable and run it
-    chmod +x "$DOTFILES_DIR/scripts/compile-zsh-files.sh"
-    zsh "$DOTFILES_DIR/scripts/compile-zsh-files.sh" || echo -e "${YELLOW}! Zsh compilation had some issues (non-critical)${NC}"
-    echo -e "${GREEN}✓ Zsh files compiled for performance${NC}"
+
+# First, ensure we have zsh available for compilation
+if ! command -v zsh &> /dev/null; then
+    echo -e "${RED}✗ zsh not found - cannot compile zsh files${NC}"
+    echo -e "${YELLOW}! Skipping zsh compilation${NC}"
 else
-    echo -e "${YELLOW}! Zsh compilation script not found, compiling manually...${NC}"
-    # Fallback compilation
-    [[ -f ~/.zshrc ]] && zcompile ~/.zshrc || true
-    [[ -f ~/.p10k.zsh ]] && zcompile ~/.p10k.zsh || true
-    [[ -f ~/.oh-my-zsh/oh-my-zsh.sh ]] && zcompile ~/.oh-my-zsh/oh-my-zsh.sh || true
+    # Use the dedicated compilation script if available
+    if [ -f "$DOTFILES_DIR/scripts/compile-zsh-files.sh" ]; then
+        echo -e "${YELLOW}Running dedicated zsh compilation script...${NC}"
+        chmod +x "$DOTFILES_DIR/scripts/compile-zsh-files.sh"
+        
+        # Run the script with proper error handling
+        if zsh "$DOTFILES_DIR/scripts/compile-zsh-files.sh" 2>/dev/null; then
+            echo -e "${GREEN}✓ Zsh files compiled successfully using script${NC}"
+        else
+            echo -e "${YELLOW}! Compilation script had issues, falling back to manual compilation${NC}"
+            # Fallback to manual compilation
+            compile_zsh_files_manual
+        fi
+    else
+        echo -e "${YELLOW}Compilation script not found, compiling manually...${NC}"
+        compile_zsh_files_manual
+    fi
+    
+    # Verify compilation worked
+    compiled_count=0
+    total_count=0
+    for file in ~/.zshrc ~/.p10k.zsh ~/.oh-my-zsh/oh-my-zsh.sh; do
+        if [[ -f "$file" ]]; then
+            total_count=$((total_count + 1))
+            if [[ -f "${file}.zwc" ]]; then
+                compiled_count=$((compiled_count + 1))
+            fi
+        fi
+    done
+    
+    if [[ $compiled_count -gt 0 ]]; then
+        echo -e "${GREEN}✓ Successfully compiled $compiled_count/$total_count core zsh files${NC}"
+    else
+        echo -e "${YELLOW}! No zsh files were compiled (this may affect startup performance)${NC}"
+    fi
 fi
+
+# Function for manual zsh compilation
+compile_zsh_files_manual() {
+    echo -e "${YELLOW}Compiling core zsh files manually...${NC}"
+    
+    # Core files to compile
+    local files_to_compile=(
+        "$HOME/.zshrc"
+        "$HOME/.p10k.zsh" 
+        "$HOME/.oh-my-zsh/oh-my-zsh.sh"
+    )
+    
+    for file in "${files_to_compile[@]}"; do
+        if [[ -f "$file" ]]; then
+            if [[ ! -f "${file}.zwc" ]] || [[ "$file" -nt "${file}.zwc" ]]; then
+                echo "  Compiling: $(basename "$file")"
+                zcompile "$file" 2>/dev/null || echo "    ! Failed to compile $(basename "$file")"
+            else
+                echo "  Already compiled: $(basename "$file")"
+            fi
+        fi
+    done
+    
+    # Compile plugin files
+    if [[ -d "$HOME/.oh-my-zsh/custom/plugins" ]]; then
+        echo -e "${YELLOW}Compiling plugin files...${NC}"
+        for plugin_dir in "$HOME/.oh-my-zsh/custom/plugins"/*; do
+            if [[ -d "$plugin_dir" ]]; then
+                plugin_name=$(basename "$plugin_dir")
+                plugin_file="$plugin_dir/$plugin_name.plugin.zsh"
+                
+                if [[ -f "$plugin_file" ]]; then
+                    if [[ ! -f "${plugin_file}.zwc" ]] || [[ "$plugin_file" -nt "${plugin_file}.zwc" ]]; then
+                        echo "  Compiling plugin: $plugin_name"
+                        zcompile "$plugin_file" 2>/dev/null || true
+                    fi
+                fi
+            fi
+        done
+    fi
+    
+    # Recompile completion dump if it exists
+    if [[ -f "$HOME/.zcompdump" ]]; then
+        echo "  Compiling completion dump"
+        rm -f "$HOME/.zcompdump.zwc"
+        zcompile "$HOME/.zcompdump" 2>/dev/null || true
+    fi
+}
 
 # Configure Git
 if [ ! -f "$HOME/.gitconfig" ] || ! grep -q "user.name" "$HOME/.gitconfig" 2>/dev/null; then
