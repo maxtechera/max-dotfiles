@@ -13,18 +13,63 @@ BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 NC='\033[0m'
 
+# Parse command line arguments
+SKIP_BACKUP=false
+SKIP_AUR=false
+DRY_RUN=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --skip-backup)
+            SKIP_BACKUP=true
+            shift
+            ;;
+        --skip-aur)
+            SKIP_AUR=true
+            shift
+            ;;
+        --dry-run)
+            DRY_RUN=true
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: $0 [OPTIONS]"
+            echo "Options:"
+            echo "  --skip-backup    Skip creating backup of existing configs"
+            echo "  --skip-aur       Skip AUR package installation"
+            echo "  --dry-run        Preview changes without making them"
+            echo "  --help, -h       Show this help message"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
 echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║     Arch Linux Environment Setup       ║${NC}"
 echo -e "${BLUE}║        Hyprland + Ghostty              ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
 
-# Request sudo upfront and keep it alive
-echo -e "\n${YELLOW}This script needs sudo access. Please enter your password:${NC}"
-sudo -v
+if [ "$DRY_RUN" = true ]; then
+    echo -e "\n${YELLOW}DRY RUN MODE - No changes will be made${NC}"
+    echo -e "${YELLOW}This will show what would be installed/changed${NC}\n"
+fi
 
-# Keep sudo alive in the background
-(while true; do sudo -n true; sleep 50; done 2>/dev/null) &
-SUDO_PID=$!
+# Request sudo upfront and keep it alive (unless dry run)
+if [ "$DRY_RUN" = false ]; then
+    echo -e "\n${YELLOW}This script needs sudo access. Please enter your password:${NC}"
+    sudo -v
+    
+    # Keep sudo alive in the background
+    (while true; do sudo -n true; sleep 50; done 2>/dev/null) &
+    SUDO_PID=$!
+else
+    SUDO_PID=""
+fi
 
 # Cleanup function to kill the sudo keepalive
 cleanup() {
@@ -46,6 +91,10 @@ install_if_missing() {
     local critical=${2:-false}
     
     if ! check_installed "$package"; then
+        if [ "$DRY_RUN" = true ]; then
+            echo -e "${BLUE}[DRY RUN]${NC} Would install: $package"
+            return 0
+        fi
         echo -e "${YELLOW}Installing $package...${NC}"
         if sudo pacman -S --needed --noconfirm "$package" 2>/dev/null; then
             echo -e "${GREEN}✓ $package installed successfully${NC}"
@@ -78,6 +127,10 @@ install_aur_if_missing() {
     local critical=${2:-false}
     
     if ! check_aur_installed "$package"; then
+        if [ "$DRY_RUN" = true ]; then
+            echo -e "${BLUE}[DRY RUN]${NC} Would install from AUR: $package"
+            return 0
+        fi
         echo -e "${YELLOW}Installing $package from AUR...${NC}"
         if yay -S --needed --noconfirm "$package" 2>/dev/null; then
             echo -e "${GREEN}✓ $package installed successfully${NC}"
@@ -203,14 +256,200 @@ verify_system_health() {
     return 0
 }
 
+# Comprehensive backup function
+backup_all_configs() {
+    echo -e "${YELLOW}Backing up existing configurations...${NC}"
+    
+    BACKUP_DIR="$HOME/.dotfiles-backup-$(date +%Y%m%d-%H%M%S)"
+    mkdir -p "$BACKUP_DIR"
+    
+    # Create backup log
+    BACKUP_LOG="$BACKUP_DIR/backup.log"
+    echo "Dotfiles Installation Backup" > "$BACKUP_LOG"
+    echo "Date: $(date)" >> "$BACKUP_LOG"
+    echo "=========================" >> "$BACKUP_LOG"
+    echo >> "$BACKUP_LOG"
+    
+    # List of configs to backup
+    CONFIGS_TO_BACKUP=(
+        ".config/hypr"
+        ".config/waybar"
+        ".config/ghostty"
+        ".config/nvim"
+        ".config/tmux"
+        ".config/fuzzel"
+        ".config/mako"
+        ".config/gtk-3.0"
+        ".config/gtk-4.0"
+        ".config/rofi"
+        ".tmux.conf"
+        ".tmux"
+        ".zshrc"
+        ".zshenv"
+        ".p10k.zsh"
+        ".gitconfig"
+        ".ssh/config"
+        ".oh-my-zsh"
+        ".nvm"
+        ".claude"
+        ".dotfiles"
+    )
+    
+    echo -e "${BLUE}Creating backup at: $BACKUP_DIR${NC}"
+    local backed_up=0
+    local skipped=0
+    
+    for config in "${CONFIGS_TO_BACKUP[@]}"; do
+        src="$HOME/$config"
+        if [ -e "$src" ]; then
+            # Create parent directory in backup
+            parent_dir=$(dirname "$config")
+            if [ "$parent_dir" != "." ]; then
+                mkdir -p "$BACKUP_DIR/$parent_dir"
+            fi
+            
+            # Copy the config
+            if cp -rL "$src" "$BACKUP_DIR/$config" 2>/dev/null; then
+                echo -e "  ${GREEN}✓${NC} Backed up: $config"
+                echo "Backed up: $config" >> "$BACKUP_LOG"
+                ((backed_up++))
+            else
+                echo -e "  ${YELLOW}!${NC} Failed to backup: $config"
+                echo "Failed: $config" >> "$BACKUP_LOG"
+            fi
+        else
+            ((skipped++))
+        fi
+    done
+    
+    # Backup installed package lists
+    echo -e "\n${YELLOW}Backing up package lists...${NC}"
+    pacman -Qqe > "$BACKUP_DIR/pacman-explicit.txt" 2>/dev/null
+    pacman -Qqm > "$BACKUP_DIR/pacman-foreign.txt" 2>/dev/null
+    
+    if command -v yay &> /dev/null; then
+        yay -Qqe > "$BACKUP_DIR/yay-packages.txt" 2>/dev/null
+    fi
+    
+    # Create restore script
+    cat > "$BACKUP_DIR/restore.sh" << 'EOF'
+#!/bin/bash
+# Restore script for dotfiles backup
+# Usage: ./restore.sh [--dry-run]
+
+BACKUP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DRY_RUN=false
+
+if [ "$1" == "--dry-run" ]; then
+    DRY_RUN=true
+    echo "DRY RUN MODE - No changes will be made"
+fi
+
+echo "Restoring from backup: $BACKUP_DIR"
+echo "This will restore the following configs:"
+cat "$BACKUP_DIR/backup.log" | grep "^Backed up:" | sed 's/Backed up: /  - /'
+
+if [ "$DRY_RUN" = false ]; then
+    read -p "Continue with restore? (y/n) [n]: " -n 1 -r REPLY
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Restore cancelled"
+        exit 1
+    fi
+fi
+
+# Restore configs
+while IFS= read -r line; do
+    if [[ $line =~ ^"Backed up: "(.+)$ ]]; then
+        config="${BASH_REMATCH[1]}"
+        src="$BACKUP_DIR/$config"
+        dest="$HOME/$config"
+        
+        if [ "$DRY_RUN" = true ]; then
+            echo "[DRY RUN] Would restore: $config"
+        else
+            # Create parent directory if needed
+            parent_dir=$(dirname "$dest")
+            mkdir -p "$parent_dir"
+            
+            # Remove existing and restore
+            rm -rf "$dest" 2>/dev/null
+            cp -r "$src" "$dest"
+            echo "Restored: $config"
+        fi
+    fi
+done < "$BACKUP_DIR/backup.log"
+
+echo "Restore complete!"
+EOF
+    
+    chmod +x "$BACKUP_DIR/restore.sh"
+    
+    echo >> "$BACKUP_LOG"
+    echo "Summary:" >> "$BACKUP_LOG"
+    echo "  Backed up: $backed_up items" >> "$BACKUP_LOG"
+    echo "  Skipped: $skipped items (not found)" >> "$BACKUP_LOG"
+    
+    echo -e "\n${GREEN}✓ Backup complete!${NC}"
+    echo -e "  ${GREEN}Location:${NC} $BACKUP_DIR"
+    echo -e "  ${GREEN}Items backed up:${NC} $backed_up"
+    echo -e "  ${GREEN}Items skipped:${NC} $skipped"
+    echo -e "\n${YELLOW}To restore this backup later, run:${NC}"
+    echo -e "  ${BLUE}$BACKUP_DIR/restore.sh${NC}"
+    
+    # Store backup location for reference
+    export DOTFILES_BACKUP_DIR="$BACKUP_DIR"
+}
+
+# Check if we should run backup
+should_backup() {
+    if [ "$SKIP_BACKUP" = "true" ]; then
+        return 1
+    fi
+    
+    # Check if any configs exist
+    for config in .config/hypr .config/waybar .config/nvim .zshrc .tmux.conf; do
+        if [ -e "$HOME/$config" ]; then
+            return 0
+        fi
+    done
+    
+    return 1
+}
+
 # Progress counter
 STEP=0
-TOTAL_STEPS=13
+TOTAL_STEPS=14
 
 step() {
     STEP=$((STEP + 1))
     echo -e "\n${PURPLE}[$STEP/$TOTAL_STEPS]${NC} $1"
 }
+
+# Run comprehensive backup before starting
+if should_backup && [ "$DRY_RUN" = false ]; then
+    echo -e "\n${YELLOW}Existing configurations detected.${NC}"
+    read -p "Create a full backup before proceeding? (recommended) (y/n) [y]: " -n 1 -r BACKUP_CHOICE
+    BACKUP_CHOICE=${BACKUP_CHOICE:-y}
+    echo
+    if [[ $BACKUP_CHOICE =~ ^[Yy]$ ]]; then
+        backup_all_configs
+        echo -e "\n${YELLOW}Backup complete. Proceeding with installation...${NC}"
+        sleep 2
+    else
+        echo -e "${YELLOW}⚠️  WARNING: Proceeding without backup!${NC}"
+        echo -e "${YELLOW}Some configurations may be overwritten.${NC}"
+        read -p "Are you sure you want to continue? (y/n) [n]: " -n 1 -r CONFIRM
+        CONFIRM=${CONFIRM:-n}
+        echo
+        if [[ ! $CONFIRM =~ ^[Yy]$ ]]; then
+            echo -e "${RED}Installation cancelled.${NC}"
+            exit 1
+        fi
+    fi
+elif [ "$DRY_RUN" = true ] && should_backup; then
+    echo -e "\n${BLUE}[DRY RUN]${NC} Would create backup of existing configurations"
+fi
 
 # Install essential build tools (critical for everything else)
 step "Checking essential build tools..."
@@ -484,7 +723,7 @@ fi
 step "Installing AUR packages (optional)..."
 
 # Check if user wants to skip AUR packages
-if [ "$1" == "--skip-aur" ]; then
+if [ "$SKIP_AUR" = true ]; then
     echo -e "${YELLOW}Skipping AUR packages as requested${NC}"
 else
     echo -e "${YELLOW}AUR packages can take 10-30 minutes to compile${NC}"
@@ -604,25 +843,93 @@ if [ -f "$DOTFILES_DIR/scripts/backup-claude-config.sh" ]; then
     "$DOTFILES_DIR/scripts/backup-claude-config.sh"
 fi
 
+# Safe stow function with conflict handling
+safe_stow() {
+    local dir="$1"
+    local target_path=""
+    
+    # Determine target path based on directory
+    case "$dir" in
+        zsh|git|tmux)
+            # These create dotfiles in home directory
+            target_path="$HOME/.$(basename $dir)rc"
+            if [ "$dir" = "git" ]; then
+                target_path="$HOME/.gitconfig"
+            fi
+            ;;
+        dev)
+            # Special case: links to ~/dev
+            target_path="$HOME/dev"
+            ;;
+        *)
+            # Most configs go to .config
+            target_path="$HOME/.config/$dir"
+            ;;
+    esac
+    
+    # Check if already properly stowed
+    if [ -L "$target_path" ]; then
+        local link_target=$(readlink "$target_path")
+        if [[ "$link_target" == *"/.dotfiles/$dir/"* ]]; then
+            echo -e "  ${GREEN}✓ $dir already linked${NC}"
+            return 0
+        else
+            echo -e "  ${YELLOW}! $dir linked to different location: $link_target${NC}"
+            read -p "    Replace with dotfiles version? (y/n) [n]: " -n 1 -r REPLY
+            REPLY=${REPLY:-n}
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                rm "$target_path"
+            else
+                echo -e "    ${YELLOW}Skipping $dir${NC}"
+                return 1
+            fi
+        fi
+    elif [ -e "$target_path" ]; then
+        # File/directory exists but is not a symlink
+        echo -e "  ${YELLOW}! $dir config exists at $target_path${NC}"
+        read -p "    Backup and replace? (y/n) [y]: " -n 1 -r REPLY
+        REPLY=${REPLY:-y}
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            local backup_path="$target_path.backup.$(date +%Y%m%d%H%M%S)"
+            mv "$target_path" "$backup_path"
+            echo -e "    ${GREEN}Backed up to: $backup_path${NC}"
+        else
+            echo -e "    ${YELLOW}Skipping $dir${NC}"
+            return 1
+        fi
+    fi
+    
+    # Now try to stow
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "  ${BLUE}[DRY RUN]${NC} Would link: $dir -> $target_path"
+        return 0
+    fi
+    
+    if stow -v "$dir" 2>&1; then
+        echo -e "  ${GREEN}✓ $dir linked successfully${NC}"
+        return 0
+    else
+        # Stow failed, try to diagnose why
+        local stow_error=$(stow -n -v "$dir" 2>&1)
+        if [[ "$stow_error" == *"existing target is not"* ]]; then
+            echo -e "  ${RED}✗ $dir failed: Conflicts detected${NC}"
+            echo -e "    ${YELLOW}Run 'stow -n -v $dir' for details${NC}"
+        else
+            echo -e "  ${RED}✗ $dir failed: Unknown error${NC}"
+        fi
+        return 1
+    fi
+}
+
 # Use GNU Stow to symlink configs
 echo -e "${YELLOW}Creating symlinks...${NC}"
 for dir in hypr waybar ghostty nvim tmux zsh git dev fuzzel mako gtk claude; do
     if [ -d "$dir" ]; then
-        # Special handling for dev directory (links to ~/dev)
-        if [ "$dir" = "dev" ]; then
-            if [ -L "$HOME/dev" ]; then
-                echo -e "  ${GREEN}✓ $dir already linked${NC}"
-            else
-                stow -v "$dir" 2>/dev/null || echo -e "  ${YELLOW}! $dir stow failed (may already be linked)${NC}"
-            fi
-        else
-            # Check if already stowed
-            if [ -L "$HOME/.config/$dir" ] || [ -L "$HOME/.$(basename $dir)rc" ]; then
-                echo -e "  ${GREEN}✓ $dir already linked${NC}"
-            else
-                stow -v "$dir" 2>/dev/null || echo -e "  ${YELLOW}! $dir stow failed (may already be linked)${NC}"
-            fi
-        fi
+        safe_stow "$dir"
+    else
+        echo -e "  ${YELLOW}! $dir directory not found in dotfiles${NC}"
     fi
 done
 
@@ -671,8 +978,12 @@ if [ "$SHELL" != "$(which zsh)" ]; then
     REPLY=${REPLY:-y}
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        chsh -s $(which zsh)
-        echo -e "${GREEN}✓ Default shell changed to zsh${NC}"
+        if [ "$DRY_RUN" = true ]; then
+            echo -e "${BLUE}[DRY RUN]${NC} Would change shell to: $(which zsh)"
+        else
+            chsh -s $(which zsh)
+            echo -e "${GREEN}✓ Default shell changed to zsh${NC}"
+        fi
     fi
 else
     echo -e "${GREEN}✓ Already using zsh${NC}"
@@ -680,11 +991,19 @@ fi
 
 # Enable services
 echo -e "${YELLOW}Enabling services...${NC}"
-systemctl --user enable pipewire 2>/dev/null || true
-systemctl --user enable wireplumber 2>/dev/null || true
-sudo systemctl enable bluetooth 2>/dev/null || true
-sudo systemctl enable NetworkManager 2>/dev/null || true
-echo -e "${GREEN}✓ Services enabled${NC}"
+if [ "$DRY_RUN" = true ]; then
+    echo -e "${BLUE}[DRY RUN]${NC} Would enable services:"
+    echo -e "  - pipewire (user)"
+    echo -e "  - wireplumber (user)"
+    echo -e "  - bluetooth (system)"
+    echo -e "  - NetworkManager (system)"
+else
+    systemctl --user enable pipewire 2>/dev/null || true
+    systemctl --user enable wireplumber 2>/dev/null || true
+    sudo systemctl enable bluetooth 2>/dev/null || true
+    sudo systemctl enable NetworkManager 2>/dev/null || true
+    echo -e "${GREEN}✓ Services enabled${NC}"
+fi
 
 # Install Oh My Zsh
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
@@ -1383,7 +1702,11 @@ if ! check_installed sddm; then
     install_aur_if_missing "sddm-sugar-candy-git"
     
     # Configure SDDM
-    sudo systemctl enable sddm
+    if [ "$DRY_RUN" = true ]; then
+        echo -e "${BLUE}[DRY RUN]${NC} Would enable sddm service"
+    else
+        sudo systemctl enable sddm
+    fi
     sudo mkdir -p /etc/sddm.conf.d
     sudo tee /etc/sddm.conf.d/theme.conf > /dev/null << EOF
 [Theme]
@@ -1830,4 +2153,15 @@ echo -e "- Use ${GREEN}z <directory>${NC} for instant directory jumping"
 echo -e "- Run ${GREEN}~/scripts/compile-zsh-files.sh${NC} after major zsh config changes"
 
 # Exit with verification status
+if [ "$DRY_RUN" = true ]; then
+    echo -e "\n${BLUE}╔════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║          Dry Run Complete              ║${NC}"
+    echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
+    echo -e "\n${YELLOW}This was a dry run. No changes were made.${NC}"
+    echo -e "${YELLOW}Review the output above to see what would be installed.${NC}"
+    echo -e "\n${GREEN}To perform the actual installation:${NC}"
+    echo -e "  ${BLUE}./install-arch.sh${NC}"
+    exit 0
+fi
+
 exit $VERIFICATION_STATUS

@@ -49,7 +49,20 @@ fi
 echo -e "${YELLOW}Setting up fuzzel configuration...${NC}"
 mkdir -p ~/.config/fuzzel
 
-cat > ~/.config/fuzzel/fuzzel.ini << 'EOF'
+# Check if fuzzel config already exists
+if [ -f ~/.config/fuzzel/fuzzel.ini ]; then
+    echo -e "${YELLOW}Found existing fuzzel configuration${NC}"
+    read -p "Backup and replace with optimized config? (y/n) [y]: " -n 1 -r REPLY
+    REPLY=${REPLY:-y}
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        # Backup existing config
+        BACKUP_FILE="$HOME/.config/fuzzel/fuzzel.ini.backup.$(date +%Y%m%d%H%M%S)"
+        cp ~/.config/fuzzel/fuzzel.ini "$BACKUP_FILE"
+        echo -e "${GREEN}Backed up to: $BACKUP_FILE${NC}"
+        
+        # Create new config
+        cat > ~/.config/fuzzel/fuzzel.ini << 'EOF'
 [main]
 font=JetBrainsMono Nerd Font:size=14
 dpi-aware=yes
@@ -76,8 +89,41 @@ radius=10
 [dmenu]
 exit-immediately-if-empty=yes
 EOF
+        echo -e "${GREEN}✓ Fuzzel configured${NC}"
+    else
+        echo -e "${YELLOW}Keeping existing fuzzel configuration${NC}"
+    fi
+else
+    # No existing config, create new one
+    cat > ~/.config/fuzzel/fuzzel.ini << 'EOF'
+[main]
+font=JetBrainsMono Nerd Font:size=14
+dpi-aware=yes
+width=25
+horizontal-pad=40
+vertical-pad=20
+inner-pad=15
+lines=10
+letter-spacing=0
+prompt=" "
 
-echo -e "${GREEN}✓ Fuzzel configured${NC}"
+[colors]
+background=1e1e2eee
+text=cdd6f4ff
+match=f38ba8ff
+selection=45475aff
+selection-text=cdd6f4ff
+border=89b4faff
+
+[border]
+width=2
+radius=10
+
+[dmenu]
+exit-immediately-if-empty=yes
+EOF
+    echo -e "${GREEN}✓ Fuzzel configured${NC}"
+fi
 
 # 5. Fix Hyprland config to ensure it uses fuzzel
 echo -e "\n${YELLOW}Checking Hyprland configuration...${NC}"

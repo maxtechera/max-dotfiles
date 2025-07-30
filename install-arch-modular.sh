@@ -441,10 +441,69 @@ run_15_dotfiles() {
     
     cd "$DOTFILES_DIR"
     
-    # Use GNU Stow (removed rofi from list)
-    for dir in hypr waybar ghostty nvim tmux zsh git; do
+    # Safe stow function with conflict handling
+    safe_stow() {
+        local dir="$1"
+        local target_path=""
+        
+        # Determine target path based on directory
+        case "$dir" in
+            zsh|git|tmux)
+                # These create dotfiles in home directory
+                target_path="$HOME/.$(basename $dir)rc"
+                if [ "$dir" = "git" ]; then
+                    target_path="$HOME/.gitconfig"
+                fi
+                ;;
+            *)
+                # Most configs go to .config
+                target_path="$HOME/.config/$dir"
+                ;;
+        esac
+        
+        # Check if already properly stowed
+        if [ -L "$target_path" ]; then
+            local link_target=$(readlink "$target_path")
+            if [[ "$link_target" == *"/.dotfiles/$dir/"* ]]; then
+                echo -e "  ${GREEN}✓ $dir already linked${NC}"
+                return 0
+            else
+                echo -e "  ${YELLOW}! $dir linked to different location${NC}"
+                read -p "    Replace? (y/n) [n]: " -n 1 -r REPLY
+                REPLY=${REPLY:-n}
+                echo
+                if [[ $REPLY =~ ^[Yy]$ ]]; then
+                    rm "$target_path"
+                else
+                    return 1
+                fi
+            fi
+        elif [ -e "$target_path" ]; then
+            # File/directory exists but is not a symlink
+            echo -e "  ${YELLOW}! $dir config exists${NC}"
+            read -p "    Backup and replace? (y/n) [y]: " -n 1 -r REPLY
+            REPLY=${REPLY:-y}
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                mv "$target_path" "$target_path.backup.$(date +%Y%m%d%H%M%S)"
+                echo -e "    ${GREEN}Backed up existing config${NC}"
+            else
+                return 1
+            fi
+        fi
+        
+        # Now try to stow
+        if stow -v "$dir" 2>&1; then
+            echo -e "  ${GREEN}✓ $dir linked${NC}"
+        else
+            echo -e "  ${RED}✗ $dir failed${NC}"
+        fi
+    }
+    
+    # Use GNU Stow with safety checks
+    for dir in hypr waybar ghostty nvim tmux zsh git fuzzel mako gtk claude; do
         if [ -d "$dir" ]; then
-            stow -v "$dir" 2>/dev/null || echo "  ! $dir stow failed"
+            safe_stow "$dir"
         fi
     done
     
@@ -536,6 +595,7 @@ run_17_aur_optional() {
         1password
         1password-cli
         grimblast-git
+        whatsapp-web-desktop
     )
     
     echo -e "${YELLOW}Available optional AUR packages:${NC}"

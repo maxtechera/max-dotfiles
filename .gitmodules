@@ -1,3 +1,6 @@
 [submodule "dev"]
-	path = dev
+	path = development/dev
 	url = https://github.com/maxtechera/dev
+[submodule "development/dev"]
+	path = development/dev
+	url = git@github.com:maxtechera/dev.git

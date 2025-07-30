@@ -1,0 +1,18 @@
+# Claude Code sensitive files
+.credentials.json
+*.credentials
+*.token
+*.key
+
+# Runtime directories
+agents/
+projects/
+shell-snapshots/
+statsig/
+todos/
+ide/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.cache
