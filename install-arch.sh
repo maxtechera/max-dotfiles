@@ -599,9 +599,14 @@ for script in scripts/nvim-tab scripts/github-dev-sync.sh scripts/fix-arch-audio
     fi
 done
 
+# Backup Claude config if needed
+if [ -f "$DOTFILES_DIR/scripts/backup-claude-config.sh" ]; then
+    "$DOTFILES_DIR/scripts/backup-claude-config.sh"
+fi
+
 # Use GNU Stow to symlink configs
 echo -e "${YELLOW}Creating symlinks...${NC}"
-for dir in hypr waybar ghostty nvim tmux zsh git dev fuzzel mako gtk; do
+for dir in hypr waybar ghostty nvim tmux zsh git dev fuzzel mako gtk claude; do
     if [ -d "$dir" ]; then
         # Special handling for dev directory (links to ~/dev)
         if [ "$dir" = "dev" ]; then

@@ -71,7 +71,7 @@ cd max-dotfiles
 - **Terminal**: Ghostty with FiraCode font + ligatures
 - **Shell**: Zsh with Oh My Zsh, autosuggestions, syntax highlighting
 - **Editor**: Neovim with ThePrimeagen's config
-- **AI Assistant**: Claude Code CLI for coding assistance
+- **AI Assistant**: Claude Code CLI for coding assistance + global Claude configuration
 - **Dev Tools**: Git, tmux, lazygit, GitHub CLI
 - **Modern Utils**: eza (ls), zoxide (cd), bat (cat), ripgrep, fzf
 - **Languages**: Node.js (via NVM), Python (with pipx)
@@ -124,6 +124,7 @@ Both Aerospace (macOS) and Hyprland (Arch) use identical keybindings:
 ├── tmux/           # Tmux config
 ├── zsh/            # Shell config
 ├── git/            # Git config
+├── claude/         # Claude AI configuration
 └── scripts/        # Helper scripts
     ├── nvim-tab              # Smart nvim/tmux integration
     └── github-dev-sync.sh    # Sync GitHub projects

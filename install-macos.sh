@@ -1,6 +1,6 @@
 #!/bin/bash
-# macOS Dotfiles Setup
-# Configures macOS to match Arch Linux environment
+# macOS Dotfiles Setup - Fixed for Platform Parity
+# Configures macOS to match Arch Linux environment exactly
 
 set -e
 
@@ -12,8 +12,8 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║        macOS Environment Setup         ║${NC}"
-echo -e "${BLUE}║     Matching Arch Linux Experience     ║${NC}"
+echo -e "${BLUE}║   macOS Environment Setup (Fixed)      ║${NC}"
+echo -e "${BLUE}║     Full Parity with Arch Linux        ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
 
 # Check if Homebrew is installed
@@ -23,11 +23,11 @@ if ! command -v brew &> /dev/null; then
 fi
 
 # Update Homebrew
-echo -e "\n${YELLOW}[1/9] Updating Homebrew...${NC}"
+echo -e "\n${YELLOW}[1/10] Updating Homebrew...${NC}"
 brew update
 
-# Install base packages (matching Arch setup)
-echo -e "\n${YELLOW}[2/9] Installing CLI tools...${NC}"
+# Install base packages (matching Arch setup exactly)
+echo -e "\n${YELLOW}[2/10] Installing CLI tools...${NC}"
 brew install --quiet \
     neovim \
     neovim-remote \
@@ -36,15 +36,17 @@ brew install --quiet \
     stow \
     wget \
     curl \
+    unzip \
     ripgrep \
     fd \
     fzf \
     bat \
+    jq \
+    bc \
     htop \
     btop \
     lazygit \
     gh \
-    jq \
     python@3.11 \
     pipx \
     tree \
@@ -61,10 +63,11 @@ brew install --quiet \
     openssh \
     ranger \
     neofetch \
-    git-delta
+    git-delta \
+    fnm  # Use fnm instead of nvm for performance
 
 # Install casks
-echo -e "\n${YELLOW}[3/9] Installing applications...${NC}"
+echo -e "\n${YELLOW}[3/10] Installing applications...${NC}"
 
 # Essential apps
 brew install --cask ghostty || true
@@ -90,7 +93,7 @@ brew install --cask 1password || true
 brew install --cask 1password-cli || true
 
 # Install fonts
-echo -e "\n${YELLOW}[4/9] Installing fonts...${NC}"
+echo -e "\n${YELLOW}[4/10] Installing fonts...${NC}"
 brew tap homebrew/cask-fonts
 brew install --cask font-fira-code-nerd-font || true
 brew install --cask font-jetbrains-mono-nerd-font || true
@@ -99,7 +102,7 @@ brew install --cask font-roboto || true
 brew install --cask font-ubuntu || true
 
 # Setup Python tools with pipx
-echo -e "\n${YELLOW}[5/9] Setting up Python tools...${NC}"
+echo -e "\n${YELLOW}[5/10] Setting up Python tools...${NC}"
 pipx ensurepath
 pipx install poetry
 pipx install black
@@ -107,7 +110,7 @@ pipx install ruff
 pipx install ipython
 
 # Clone and setup dotfiles
-echo -e "\n${YELLOW}[6/9] Setting up dotfiles...${NC}"
+echo -e "\n${YELLOW}[6/10] Setting up dotfiles...${NC}"
 DOTFILES_DIR="$HOME/.dotfiles"
 
 # Backup existing configs
@@ -147,7 +150,14 @@ echo -e "\n${GREEN}Installing custom scripts...${NC}"
 sudo mkdir -p /usr/local/bin
 sudo install -m 755 scripts/nvim-tab /usr/local/bin/nvim-tab
 sudo install -m 755 scripts/github-dev-sync.sh /usr/local/bin/dev-sync
+sudo install -m 755 scripts/install-fnm.sh /usr/local/bin/install-fnm
 chmod +x scripts/setup-git-config.sh
+chmod +x scripts/compile-zsh-files.sh
+
+# Backup Claude config if needed
+if [ -f "scripts/backup-claude-config.sh" ]; then
+    ./scripts/backup-claude-config.sh
+fi
 
 # Use GNU Stow to symlink configs
 echo -e "\n${GREEN}Creating symlinks...${NC}"
@@ -156,12 +166,13 @@ stow -v nvim
 stow -v tmux
 stow -v zsh
 stow -v git
+stow -v claude
 
 # Copy aerospace config to home (it doesn't use .config/)
 cp aerospace/.aerospace.toml ~/
 
 # Change default shell to zsh if needed
-echo -e "\n${YELLOW}[7/9] Setting up shell...${NC}"
+echo -e "\n${YELLOW}[7/10] Setting up shell...${NC}"
 if [ "$SHELL" != "$(which zsh)" ]; then
     echo "Changing default shell to zsh..."
     chsh -s $(which zsh)
@@ -173,33 +184,56 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 fi
 
-# Set up zsh plugins
-echo -e "\n${GREEN}Installing zsh plugins...${NC}"
+# Install Powerlevel10k theme
+ZSH_CUSTOM=${ZSH_CUSTOM:-~/.oh-my-zsh/custom}
+if [ ! -d "$ZSH_CUSTOM/themes/powerlevel10k" ]; then
+    echo -e "${YELLOW}Installing Powerlevel10k theme...${NC}"
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k"
+fi
+
+# Set up performance-optimized zsh plugins
+echo -e "\n${GREEN}Installing performance-optimized zsh plugins...${NC}"
 git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions 2>/dev/null || true
-git clone https://github.com/zsh-users/zsh-syntax-highlighting ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting 2>/dev/null || true
+
+# Use fast-syntax-highlighting instead of zsh-syntax-highlighting
+if [ ! -d "$ZSH_CUSTOM/plugins/fast-syntax-highlighting" ]; then
+    echo -e "${YELLOW}Installing fast-syntax-highlighting...${NC}"
+    git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git "$ZSH_CUSTOM/plugins/fast-syntax-highlighting"
+fi
+
+# Install zsh-autocomplete
+if [ ! -d "$ZSH_CUSTOM/plugins/zsh-autocomplete" ]; then
+    echo -e "${YELLOW}Installing zsh-autocomplete...${NC}"
+    git clone --depth 1 -- https://github.com/marlonrichert/zsh-autocomplete.git "$ZSH_CUSTOM/plugins/zsh-autocomplete"
+fi
 
 # Install tmux plugin manager
 echo -e "\n${GREEN}Installing tmux plugin manager...${NC}"
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm 2>/dev/null || true
 
-# Install NVM
-echo -e "\n${YELLOW}[8/9] Installing NVM...${NC}"
-if [ ! -d "$HOME/.nvm" ]; then
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-    
-    # Source NVM and install latest LTS Node
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    nvm install --lts
-    nvm use --lts
-    nvm alias default node
-    
-    # Install global npm packages
-    npm install -g pnpm yarn typescript prettier eslint
+# Install fnm (Fast Node Manager) instead of NVM
+echo -e "\n${YELLOW}[8/10] Installing Fast Node Manager (fnm)...${NC}"
+if ! command -v fnm &> /dev/null; then
+    echo -e "${RED}fnm was not installed via Homebrew, trying manual installation...${NC}"
+    curl -fsSL https://fnm.vercel.app/install | bash
 fi
 
+# Configure fnm in current session
+export PATH="/Users/$USER/Library/Application Support/fnm:$PATH"
+eval "$(fnm env --use-on-cd)"
+
+# Install Node.js LTS with fnm
+echo -e "\n${GREEN}Installing Node.js LTS with fnm...${NC}"
+fnm install --lts
+fnm use lts-latest
+fnm default lts-latest
+
+# Install global npm packages
+echo -e "\n${GREEN}Installing global npm packages...${NC}"
+npm install -g pnpm yarn typescript prettier eslint
+
 # Configure Git and SSH
-echo -e "\n${YELLOW}[9/9] Configuring Git and SSH...${NC}"
+echo -e "\n${YELLOW}[9/10] Configuring Git and SSH...${NC}"
 ./scripts/setup-git-config.sh
 
 # Generate SSH key if needed
@@ -211,6 +245,18 @@ if [ ! -f "$HOME/.ssh/id_ed25519" ] && [ ! -f "$HOME/.ssh/id_rsa" ]; then
     cat "$HOME/.ssh/id_ed25519.pub"
     echo -e "\n${YELLOW}Press Enter when you've added the key to GitHub...${NC}"
     read
+fi
+
+# Compile zsh files for faster startup (matching Arch)
+echo -e "\n${YELLOW}[10/10] Compiling zsh files for performance...${NC}"
+if [ -f "$DOTFILES_DIR/scripts/compile-zsh-files.sh" ]; then
+    zsh "$DOTFILES_DIR/scripts/compile-zsh-files.sh"
+else
+    # Fallback manual compilation
+    echo -e "${YELLOW}Compiling zsh configuration files...${NC}"
+    zsh -c 'zcompile ~/.zshrc' 2>/dev/null || true
+    zsh -c 'zcompile ~/.p10k.zsh' 2>/dev/null || true
+    zsh -c 'zcompile ~/.oh-my-zsh/oh-my-zsh.sh' 2>/dev/null || true
 fi
 
 # Configure macOS defaults for better experience
@@ -232,6 +278,11 @@ echo -e "\n${GREEN}╔═══════════════════�
 echo -e "${GREEN}║    macOS Setup Complete!               ║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════╝${NC}"
 echo -e "\n${YELLOW}Please restart your terminal or run: source ~/.zshrc${NC}"
+echo -e "\n${GREEN}Performance Optimizations Applied:${NC}"
+echo -e "  ✓ fnm for fast Node.js management"
+echo -e "  ✓ fast-syntax-highlighting for zsh"
+echo -e "  ✓ Compiled zsh files for instant startup"
+echo -e "  ✓ All CLI tools matching Arch Linux"
 echo -e "\n${BLUE}Key bindings (Aerospace):${NC}"
 echo -e "  ${GREEN}Alt + Enter${NC} - Open Ghostty"
 echo -e "  ${GREEN}Alt + F${NC} - Fullscreen"

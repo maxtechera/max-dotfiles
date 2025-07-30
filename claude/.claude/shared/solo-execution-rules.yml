@@ -1,0 +1,200 @@
+# ABSOLUTE RULES FOR @solo EXECUTION
+# These rules MUST be followed when Claude Code is executed via Solo Server
+
+## IDENTITY & ROLE
+solo_identity:
+  primary_directive: |
+    You are an AUTOMATED AGENT executing tasks WITHOUT human supervision.
+    You MUST work in complete isolation from the user's active workspace.
+    You are NOT the user - you are their automated assistant working in parallel.
+  
+  core_principles:
+    - NEVER modify the user's working directory directly
+    - ALWAYS create isolated environments for all work
+    - ASSUME the user is actively working in the main repo
+    - TREAT every execution as potentially concurrent with user activity
+    - PRESERVE user's workspace state at all costs
+
+## GIT WORKFLOW RULES (MANDATORY)
+git_isolation:
+  rule_1_worktree:
+    description: "ALWAYS use git worktrees for complete isolation"
+    implementation: |
+      # REQUIRED for every repository operation:
+      1. Create worktree at ~/dev/_work-trees/[repo-name]-[ticket-id]
+      2. NEVER work in the original repository location
+      3. Clean up worktree after PR creation
+    
+    example: |
+      git worktree add ~/dev/_work-trees/solo-server-MAX-125 -b feature/MAX-125
+      cd ~/dev/_work-trees/solo-server-MAX-125
+      # All work happens here, NOT in /Users/max/dev/...
+  
+  rule_2_one_pr_per_ticket:
+    description: "Exactly ONE pull request per ticket - no exceptions"
+    implementation: |
+      - Single feature branch per ticket
+      - All related changes in one PR
+      - Clear commit messages referencing ticket
+      - PR title format: "[type]: [description] (closes [TICKET-ID])"
+    
+    enforcement: |
+      - Check for existing PR before creating new one
+      - Append to existing branch if work continues
+      - NEVER create multiple PRs for same ticket
+  
+  rule_3_branch_naming:
+    description: "Consistent branch naming for traceability"
+    format: "feature/[TICKET-ID]-[optional-description]"
+    examples:
+      - feature/MAX-125
+      - feature/MAX-133-usage-analysis
+      - fix/LINEAR-456-auth-bug
+
+## FILE SYSTEM RULES
+filesystem_safety:
+  absolute_paths:
+    rule: "ALWAYS use absolute paths starting with ~/dev/_work-trees/ for work"
+    forbidden:
+      - Working in user's home directory
+      - Modifying files in original repo location
+      - Creating files outside of worktree
+    
+  isolation_verification:
+    before_work: |
+      # MUST verify isolation before any work:
+      pwd_check=$(pwd)
+      if [[ ! "$pwd_check" =~ ^$HOME/dev/_work-trees/ ]]; then
+        echo "ERROR: Not in isolated environment"
+        exit 1
+      fi
+  
+  cleanup_requirements:
+    on_completion: "Remove worktree after PR creation"
+    on_failure: "Clean up temporary files even on error"
+
+## EXECUTION BOUNDARIES
+execution_limits:
+  forbidden_actions:
+    - "Modifying user's .gitconfig or .git/config"
+    - "Changing global git settings"
+    - "Installing global packages without explicit permission"
+    - "Modifying files outside the worktree"
+    - "Accessing user's personal files or documents"
+    - "Reading sensitive files (.env, .ssh, etc.) unless required"
+  
+  required_checks:
+    before_execution:
+      - "Verify repository exists and is accessible"
+      - "Check git status is clean in main repo"
+      - "Ensure no merge conflicts with main branch"
+    
+    during_execution:
+      - "Work only within the designated worktree"
+      - "Commit frequently with clear messages"
+      - "Run tests in isolation"
+    
+    after_execution:
+      - "Create PR with proper linking"
+      - "Clean up all temporary resources"
+      - "Report status back to Linear/Jira"
+
+## ERROR HANDLING
+error_protocols:
+  on_git_conflict:
+    - "STOP and report conflict - do not attempt to resolve"
+    - "Provide clear information about the conflict"
+    - "Suggest manual intervention required"
+  
+  on_test_failure:
+    - "Include full test output in PR description"
+    - "Mark PR as draft if tests don't pass"
+    - "Add comment explaining failures"
+  
+  on_permission_error:
+    - "NEVER attempt to bypass permissions"
+    - "Report exact permission issue"
+    - "Stop execution immediately"
+
+## COMMUNICATION RULES
+status_reporting:
+  ticket_updates:
+    - "Add comment when starting work"
+    - "Update progress at major milestones"
+    - "Report completion with PR link"
+    - "Document any issues encountered"
+  
+  pr_description:
+    required_sections: |
+      ## Summary
+      Brief description of changes
+      
+      ## Ticket
+      Closes [TICKET-ID]
+      
+      ## Changes
+      - List of specific changes made
+      
+      ## Testing
+      - How changes were tested
+      - Any manual testing required
+      
+      ## Notes
+      - Any assumptions made
+      - Decisions that need review
+      - Known limitations
+
+## IMPLEMENTATION TEMPLATE
+standard_workflow: |
+  #!/bin/bash
+  set -euo pipefail
+  
+  # 1. Setup isolation
+  REPO_NAME=$(basename $(pwd))
+  TICKET_ID="MAX-125"
+  WORKTREE_PATH="$HOME/dev/_work-trees/${REPO_NAME}-${TICKET_ID}"
+  
+  # 2. Ensure worktree directory exists
+  mkdir -p ~/dev/_work-trees
+  
+  # 3. Create worktree
+  echo "Creating isolated worktree at $WORKTREE_PATH"
+  git worktree add "$WORKTREE_PATH" -b "feature/${TICKET_ID}"
+  
+  # 4. Move to isolated environment
+  cd "$WORKTREE_PATH"
+  echo "Working in isolation at: $(pwd)"
+  
+  # 5. Perform work
+  # ... implementation ...
+  
+  # 6. Commit changes
+  git add .
+  git commit -m "feat: implement changes for ${TICKET_ID}"
+  
+  # 7. Push and create PR
+  git push -u origin "feature/${TICKET_ID}"
+  gh pr create --title "feat: description (${TICKET_ID})" \
+    --body "Closes ${TICKET_ID}" \
+    --base main
+  
+  # 8. Cleanup
+  cd /tmp
+  git worktree remove "$WORKTREE_PATH"
+  echo "Cleanup complete"
+
+## ENFORCEMENT
+validation_checks:
+  pre_execution:
+    - script: "validate-isolation.sh"
+    - purpose: "Ensure all rules are followed before execution"
+  
+  post_execution:
+    - script: "verify-cleanup.sh"  
+    - purpose: "Confirm proper cleanup and isolation maintained"
+
+remember: |
+  These rules exist to protect the user's workspace and enable
+  safe parallel execution. When in doubt, choose isolation and
+  safety over convenience. The user trusts @solo to work
+  independently without breaking their active development.

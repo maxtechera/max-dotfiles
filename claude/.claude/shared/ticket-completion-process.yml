@@ -1,0 +1,305 @@
+# Ticket Completion Process - SoloClaude Workflow
+
+## Core Principles
+- Every ticket represents potential knowledge compound
+- Completion means "shippable state" not perfection
+- Document learnings for future leverage
+- Enable agentic continuation for deep work
+
+## Process Phases
+
+### Phase 1: Context Loading & Analysis
+ticket_analysis:
+  load_context:
+    - Fetch ticket details (Linear/Jira)
+    - Load related tickets/parent issues
+    - Check previous comments/history
+    - Identify dependencies/blockers
+  
+  understand_scope:
+    - Define success criteria
+    - Identify edge cases
+    - Note potential patterns for reuse
+    - Energy level assessment → task complexity match
+  
+  knowledge_check:
+    - Search existing patterns (Notion)
+    - Check similar past implementations
+    - C7 lookup for external libraries
+    - Note knowledge gaps to fill
+
+### Phase 2: Planning & Decomposition
+implementation_planning:
+  break_down:
+    - Core functionality first (MVP approach)
+    - List implementation steps
+    - Identify research needs
+    - Flag potential subtasks
+  
+  todo_creation:
+    - Create detailed todo list
+    - Priority: high (blockers) → medium (core) → low (nice-to-have)
+    - Time estimates where helpful
+    - Mark first item as in_progress
+  
+  risk_assessment:
+    - Technical unknowns → research tasks
+    - Integration points → validation needs
+    - Performance concerns → benchmark plans
+
+### Phase 3: Implementation & Progress Tracking
+execution_flow:
+  implementation:
+    - Follow todo list systematically
+    - Update status in real-time
+    - Document decisions as you go
+    - Extract patterns immediately
+  
+  progress_updates:
+    - Comment on ticket with milestones
+    - Update completion percentage
+    - Note blockers/challenges
+    - Flag learning opportunities
+  
+  quality_gates:
+    - Tests written/passing
+    - Lint/typecheck clean
+    - Documentation updated
+    - Pattern extracted if reusable
+
+### Phase 4: Knowledge Capture & Next Steps
+knowledge_compound:
+  capture_patterns:
+    - Solution → Notion pattern library
+    - Decisions → Notion decision log
+    - Learnings → Notion learnings DB
+    - Debug insights → Content ideas
+  
+  document_next_steps:
+    - Create follow-up tickets for:
+      - Optimizations identified
+      - Refactoring opportunities
+      - Feature extensions
+      - Technical debt items
+    
+  agentic_continuation:
+    - Add comment: "@solo continue with [specific next action]"
+    - Include context for next session
+    - Link related tickets
+    - Set clear success criteria
+
+### Phase 5: Completion & Handoff
+finalize:
+  verification:
+    - All todos completed
+    - Tests passing
+    - Code reviewed (self or peer)
+    - Documentation current
+  
+  ticket_updates:
+    - Update status → Done/Resolved
+    - Add completion summary
+    - Link to relevant PRs/commits
+    - Note time invested
+  
+  handoff_prep:
+    - Clear state documentation
+    - Deployment notes if needed
+    - Monitoring/validation steps
+    - Knowledge articles linked
+
+## Agentic Patterns
+
+### @solo Command Structure
+comment_patterns:
+  continue_work:
+    format: "@solo continue implementing [feature] with [approach]"
+    context: Include relevant code locations, decisions made
+    
+  research_task:
+    format: "@solo research [topic] and implement [solution]"
+    context: Include C7 lookups needed, acceptance criteria
+    
+  debug_issue:
+    format: "@solo debug [issue] in [component]"
+    context: Include error details, attempted solutions
+    
+  optimize_code:
+    format: "@solo optimize [component] for [metric]"
+    context: Include current benchmarks, target goals
+
+### Continuation Rules
+agentic_flow:
+  auto_continue:
+    - If confidence >90% on next step
+    - If clear todo items remain
+    - If research yields clear path
+    
+  pause_for_input:
+    - Major architecture decisions
+    - External API integrations
+    - Breaking changes
+    - Unclear requirements
+    
+  knowledge_triggers:
+    - Pattern used 3+ times → Extract
+    - Debug >30min → Document
+    - Novel solution → Blog material
+    - Architecture decision → Case study
+
+## Integration Points
+
+### Linear Integration
+linear_workflow:
+  ticket_fields:
+    - Status: Todo → In Progress → Done
+    - Priority: Urgent/High/Normal/Low
+    - Estimate: Points or time
+    - Labels: tech-debt, feature, bug, etc.
+  
+  automation:
+    - Auto-create subtasks from todos
+    - Update parent on completion
+    - Link related issues
+    - Track time automatically
+
+### Notion Integration  
+knowledge_flow:
+  automatic_capture:
+    - Patterns → Pattern Database
+    - Decisions → Decision Log
+    - Learnings → Learnings DB
+    - Content → Content Calendar
+  
+  weekly_review:
+    - Extract patterns from completed tickets
+    - Identify content opportunities
+    - Update reusable components
+    - Plan knowledge sharing
+
+### Git Integration
+code_tracking:
+  commit_patterns:
+    - Reference ticket ID in commits
+    - Clear, descriptive messages
+    - Link PRs to tickets
+    - Tag with ticket labels
+  
+  branch_strategy:
+    - feature/[ticket-id]-description
+    - Atomic commits per todo item
+    - PR when shippable state reached
+
+## Command Implementation
+
+### /ticket-complete Command
+command_flow:
+  syntax: "/ticket-complete [ticket-id] [--continue]"
+  
+  steps:
+    1: Load ticket context
+    2: Generate implementation plan
+    3: Create todo list
+    4: Begin implementation
+    5: Track progress
+    6: Capture knowledge
+    7: Document next steps
+    8: Complete or continue
+  
+  flags:
+    --continue: Resume from last checkpoint
+    --research: Heavy research mode
+    --quick: Skip extensive planning
+    --extract: Force pattern extraction
+
+### Energy Matching
+energy_optimization:
+  high_energy:
+    - Complex implementation
+    - Architecture decisions
+    - Performance optimization
+    - New feature development
+  
+  medium_energy:
+    - Standard features
+    - Refactoring
+    - Test writing
+    - Code reviews
+  
+  low_energy:
+    - Documentation
+    - Simple bug fixes
+    - Configuration updates
+    - Knowledge capture
+
+## Success Metrics
+completion_quality:
+  must_have:
+    - Functionality complete
+    - Tests passing
+    - No regressions
+    - Knowledge captured
+  
+  should_have:
+    - Performance acceptable
+    - Code maintainable
+    - Patterns extracted
+    - Next steps documented
+  
+  nice_to_have:
+    - Optimizations applied
+    - Full documentation
+    - Tutorial potential noted
+    - Cross-project patterns identified
+
+## Example Workflow
+
+```yaml
+# Starting a ticket
+/ticket-complete LINEAR-123
+
+# System response:
+Loading ticket: "Add user authentication"
+Energy level: High (optimal for complex feature)
+Similar patterns found: 3 auth implementations
+
+Created todos:
+1. ✓ Research auth libraries (C7 lookup)
+2. → Set up auth middleware
+3. ⧖ Create login endpoint
+4. ⧖ Add session management
+5. ⧖ Write tests
+6. ⧖ Document API
+
+Starting implementation...
+
+# During work:
+Todo 2 complete: Auth middleware configured
+Pattern extracted: Express auth middleware setup
+Next: Login endpoint implementation
+
+# Completion:
+Ticket complete! 
+Time: 2.5 hours
+Patterns: 2 extracted
+Next steps: 3 tickets created
+- Add OAuth support
+- Implement refresh tokens  
+- Add rate limiting
+
+Added comment: "@solo continue with OAuth implementation using extracted auth pattern"
+```
+
+## Continuous Improvement
+evolution:
+  weekly_review:
+    - Which patterns got reused?
+    - What knowledge proved valuable?
+    - Where did process slow down?
+    - What automation would help?
+  
+  process_updates:
+    - Refine based on metrics
+    - Add new patterns discovered
+    - Optimize for common cases
+    - Share learnings publicly

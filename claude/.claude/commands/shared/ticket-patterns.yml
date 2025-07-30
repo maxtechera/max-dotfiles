@@ -1,0 +1,78 @@
+Common_Patterns:
+  ticket_identification:
+    linear_pattern: "LINEAR-\\d+|LIN-\\d+"
+    jira_pattern: "[A-Z]{2,}-\\d+"
+    detection: "When user mentions ticket ID"
+    response: "Suggest using /ticket command for systematic completion"
+  
+  workflow_phases:
+    load: "Fetch ticket → understand requirements → check dependencies"
+    plan: "Break into todos → order logically → include tests"
+    execute: "Work systematically → track progress → commit often"
+    complete: "Update status → add reflection → document next steps"
+  
+  completion_template: |
+    ✅ Completed: [Summary]
+    
+    Time: [Duration]
+    Approach: [Strategy used]
+    
+    What worked:
+    - [Success factors]
+    
+    Lessons learned:
+    - [Key insights]
+    
+    Next steps:
+    @solo [next action with context]
+
+  common_workflows:
+    bug_fix:
+      - Reproduce issue
+      - Identify root cause  
+      - Implement fix
+      - Add regression test
+      - Update documentation
+    
+    feature_implementation:
+      - Review requirements
+      - Design approach
+      - Implement core functionality
+      - Add tests
+      - Update docs
+      - Handle edge cases
+    
+    refactoring:
+      - Identify improvement areas
+      - Ensure test coverage
+      - Refactor incrementally
+      - Verify no regressions
+      - Update documentation
+
+  git_patterns:
+    branch_naming: "[type]/[ticket-id]-[description]"
+    commit_format: "[ticket-id] Brief description"
+    examples:
+      - "feature/LINEAR-123-add-auth"
+      - "fix/PROJ-456-login-issue"
+      - "LINEAR-123 Add JWT authentication"
+      - "PROJ-456 Fix login redirect loop"
+
+  time_tracking:
+    simple_bugs: "15-45 min"
+    standard_features: "1-3 hours"
+    complex_features: "4-8 hours"
+    with_research: "Add 50% for unknowns"
+
+  reflection_prompts:
+    what_worked: "Which approaches were most effective?"
+    challenges: "What unexpected issues arose?"
+    patterns: "Any reusable solutions discovered?"
+    next_time: "What would you do differently?"
+    
+  next_steps_patterns:
+    continue_feature: "@solo continue implementing [next component] using [approach]"
+    add_tests: "@solo add comprehensive tests for [feature]"
+    optimize: "@solo optimize [component] for [metric]"
+    document: "@solo document [feature] in README and API docs"
+    refactor: "@solo refactor [code] to improve [quality]"

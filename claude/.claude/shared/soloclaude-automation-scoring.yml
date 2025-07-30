@@ -1,0 +1,192 @@
+Automation_Confidence_Scoring:
+  scoring_factors:
+    task_clarity:
+      weight: 30
+      indicators:
+        high_score:
+          - Detailed checklist present
+          - Clear acceptance criteria
+          - Step-by-step instructions
+          - Well-defined inputs/outputs
+        low_score:
+          - Vague requirements
+          - "Figure out" or "explore" language
+          - Multiple undefined variables
+          - Requires domain expertise
+    
+    technical_ratio:
+      weight: 25
+      indicators:
+        high_score:
+          - Code implementation tasks
+          - Configuration changes
+          - Data processing/analysis
+          - Report generation
+          - Test writing
+        low_score:
+          - UI/UX design decisions
+          - Business logic decisions
+          - Architecture planning
+          - Creative content creation
+    
+    dependency_complexity:
+      weight: 20
+      indicators:
+        high_score:
+          - Self-contained task
+          - All dependencies documented
+          - No external approvals needed
+          - Clear file/folder structure
+        low_score:
+          - Requires external services
+          - Needs human approval loops
+          - Undefined dependencies
+          - Cross-system coordination
+    
+    historical_success:
+      weight: 15
+      indicators:
+        high_score:
+          - Similar tasks succeeded before
+          - Repository has good test coverage
+          - Clear coding standards exist
+          - Previous @solo executions worked
+        low_score:
+          - New type of task
+          - Previous failures in area
+          - No established patterns
+          - Complex error scenarios
+    
+    risk_assessment:
+      weight: 10
+      indicators:
+        high_score:
+          - Reversible changes
+          - Good rollback options
+          - Non-production systems
+          - Comprehensive logging exists
+        low_score:
+          - Production system changes
+          - Data migration tasks
+          - Security-sensitive areas
+          - Limited rollback options
+
+  confidence_thresholds:
+    95_plus:
+      description: "Fully automatable - send to @solo immediately"
+      characteristics:
+        - Clear checklist with all steps defined
+        - Pure technical implementation
+        - Previous successful patterns exist
+        - Low risk, reversible changes
+      examples:
+        - Adding .env.example file
+        - Running data analysis scripts
+        - Generating documentation
+        - Creating test files
+    
+    80_to_94:
+      description: "Highly automatable - recommend @solo with minor clarifications"
+      characteristics:
+        - Most requirements clear
+        - Mostly technical work
+        - Some decisions pre-made
+        - Moderate risk level
+      examples:
+        - Refactoring with clear patterns
+        - API integration with docs
+        - Report generation with templates
+        - Configuration updates
+    
+    60_to_79:
+      description: "Partially automatable - suggest hybrid approach"
+      characteristics:
+        - Mix of clear and unclear requirements
+        - Technical with some creative elements
+        - Some human decisions needed
+        - Checkpoint reviews required
+      examples:
+        - Feature implementation with UX
+        - Performance optimization
+        - Complex debugging
+        - Architecture improvements
+    
+    40_to_59:
+      description: "Limited automation - recommend local with remote assists"
+      characteristics:
+        - Significant ambiguity
+        - Heavy creative/design work
+        - Multiple decision points
+        - High coordination needs
+      examples:
+        - New feature design
+        - Major refactoring
+        - System architecture
+        - API design decisions
+    
+    below_40:
+      description: "Not suitable for automation - use local execution"
+      characteristics:
+        - Highly exploratory
+        - Requires expertise/judgment
+        - Many unknowns
+        - Critical business decisions
+      examples:
+        - Research tasks
+        - Strategic planning
+        - Creative design work
+        - Complex troubleshooting
+
+  scoring_algorithm: |
+    function calculateAutomationScore(ticket) {
+      let score = 0;
+      
+      // Task Clarity (30%)
+      score += assessTaskClarity(ticket) * 0.30;
+      
+      // Technical Ratio (25%)
+      score += calculateTechnicalRatio(ticket) * 0.25;
+      
+      // Dependency Complexity (20%)
+      score += assessDependencies(ticket) * 0.20;
+      
+      // Historical Success (15%)
+      score += checkHistoricalSuccess(ticket) * 0.15;
+      
+      // Risk Assessment (10%)
+      score += evaluateRisk(ticket) * 0.10;
+      
+      return Math.round(score);
+    }
+
+  routing_decision_tree:
+    - if: score >= 90
+      then: 
+        action: "Auto-create @solo comment"
+        message: "High confidence ({}%) - delegating to @solo for automation"
+    - if: score >= 70
+      then:
+        action: "Suggest @solo with confirmation"
+        message: "Good automation candidate ({}%) - recommend @solo execution?"
+    - if: score >= 50
+      then:
+        action: "Offer choice with local preference"
+        message: "Mixed complexity ({}%) - suggest local with remote option"
+    - else:
+      action: "Default to local execution"
+      message: "Complex task ({}%) - executing locally"
+
+  enhancement_patterns:
+    improve_score:
+      - "Break down into smaller, specific tasks"
+      - "Add clear acceptance criteria"
+      - "Define expected outputs/deliverables"
+      - "Remove ambiguous requirements"
+      - "Provide example code/patterns"
+    
+    risk_mitigation:
+      - "Add rollback instructions"
+      - "Include validation steps"
+      - "Define clear checkpoints"
+      - "Specify test requirements"
+      - "Document assumptions"

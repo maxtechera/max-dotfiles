@@ -22,3 +22,11 @@ Thumbs.db
 
 # Dev directory (will be a private submodule)
 /dev/
+
+# Claude sensitive files
+claude/.claude/.credentials.json
+claude/.claude/statsig/
+claude/.claude/todos/
+claude/.claude/shell-snapshots/
+claude/.claude/cache/
+claude/.claude/.checksums

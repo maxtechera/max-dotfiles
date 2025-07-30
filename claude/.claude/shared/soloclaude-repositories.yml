@@ -1,0 +1,187 @@
+# REPOSITORY CONFIGURATION FOR SOLOCLAUDE
+# All verified active repositories and delegation paths
+# Auto-generated from repository verification scan
+
+Repository_Configuration:
+  # All active git repositories in /Users/max/dev (excluding _archived_, _docs, _work-trees)
+  active_repositories:
+    # Examples directory - experimental/learning projects
+    examples:
+      all_things_monorepo:
+        path: "/Users/max/dev/examples/all-things-monorepo"
+        remote: "git@github.com:maxtechera/all-things-monorepo.git"
+        branch: "main"
+        description: "Monorepo experimentation project"
+        
+      my_micro_saas:
+        path: "/Users/max/dev/examples/my-micro-saas"
+        remote: "git@github.com:maxtechera/micro-saas.git"
+        branch: "main"
+        description: "Micro-SaaS template and examples"
+    
+    # Experiments directory - active development projects
+    experiments:
+      fitquest_vtuber_mvp:
+        path: "/Users/max/dev/experiments/fitquest-vtuber-mvp"
+        remote: "local"
+        branch: "main"
+        description: "VTuber fitness game MVP"
+        
+      fitquest_vtuber_files:
+        path: "/Users/max/dev/experiments/fitquest-vtuber-mvp/files"
+        remote: "local"
+        branch: "main"
+        description: "VTuber MVP files submodule"
+        
+      max_techera:
+        path: "/Users/max/dev/experiments/max-techera"
+        remote: "local"
+        branch: "main"
+        description: "Personal brand website"
+        
+      solo:
+        path: "/Users/max/dev/experiments/solo"
+        remote: "local"
+        branch: "main"
+        description: "Solo ecosystem parent repository"
+        
+      solo_claude:
+        path: "/Users/max/dev/experiments/solo/solo-claude"
+        remote: "git@github.com:maxtechera/max-claude.git"
+        branch: "main"
+        description: "SoloClaude configuration and tools"
+        
+      solo_server:
+        path: "/Users/max/dev/experiments/solo/solo-server"
+        remote: "git@github.com:maxtechera/max-claude-server.git"
+        branch: "main"
+        description: "Solo Server - AI bridge for Linear/Jira"
+        
+      teclas_uy:
+        path: "/Users/max/dev/experiments/teclas-uy"
+        remote: "local"
+        branch: "master"
+        description: "Teclas UY project"
+        
+      tennis_workout:
+        path: "/Users/max/dev/experiments/tennis-workout"
+        remote: "https://github.com/maxtechera/tennis-handbook.git"
+        branch: "main"
+        description: "Tennis workout platform"
+        
+      upwork_analyzer:
+        path: "/Users/max/dev/experiments/upwork-analyzer"
+        remote: "git@github.com:maxtechera/upwork-analyzer.git"
+        branch: "master"
+        description: "Upwork data analysis tool"
+    
+    # Forks directory - external project forks
+    forks:
+      super_claude:
+        path: "/Users/max/dev/forks/SuperClaude"
+        remote: "https://github.com/NomenAK/SuperClaude.git"
+        branch: "master"
+        description: "SuperClaude fork"
+    
+    # LastRev directory - client work
+    lastrev:
+      diligent_marketing:
+        path: "/Users/max/dev/lastrev/diligent-marketing"
+        remote: "git@github.com:last-rev-llc/diligent-marketing.git"
+        branch: "main"
+        description: "Diligent marketing website"
+        
+      lastrev_libraries:
+        path: "/Users/max/dev/lastrev/lastrev-libraries"
+        remote: "git@github.com:last-rev-llc/lastrev-libraries.git"
+        branch: "main"
+        description: "LastRev component libraries"
+        
+      lastrev_starter_v2:
+        path: "/Users/max/dev/lastrev/lastrev-starter-v2"
+        remote: "git@github.com:last-rev-llc/lastrev-starter-v2.git"
+        branch: "feature/sanity"
+        description: "LastRev starter template v2"
+    
+    # Root level - major projects
+    root:
+      theanswer:
+        path: "/Users/max/dev/theanswer"
+        remote: "https://github.com/the-answerai/theanswer.git"
+        branch: "feature/default-chat"
+        description: "TheAnswer AI platform"
+
+  # Delegation execution paths and patterns
+  delegation_paths:
+    worktree_base: "~/dev/_work-trees"
+    worktree_pattern: "${worktree_base}/${repo_name}-${ticket_id}"
+    isolation_verification: "pwd | grep -q '^$HOME/dev/_work-trees/' || exit 1"
+    
+  # Common repository aliases for delegation commands
+  common_examples:
+    # Most frequently used in @solo delegation
+    solo_server: "/Users/max/dev/experiments/solo/solo-server"
+    tennis_workout: "/Users/max/dev/experiments/tennis-workout"
+    lastrev_libraries: "/Users/max/dev/lastrev/lastrev-libraries"
+    lastrev_starter: "/Users/max/dev/lastrev/lastrev-starter-v2"
+    theanswer: "/Users/max/dev/theanswer"
+    upwork_analyzer: "/Users/max/dev/experiments/upwork-analyzer"
+    
+  # Repository categories for different types of work
+  categories:
+    personal_products:
+      - "/Users/max/dev/experiments/tennis-workout"
+      - "/Users/max/dev/experiments/upwork-analyzer"
+      - "/Users/max/dev/experiments/max-techera"
+      - "/Users/max/dev/experiments/fitquest-vtuber-mvp"
+      
+    client_work:
+      - "/Users/max/dev/lastrev/diligent-marketing"
+      - "/Users/max/dev/lastrev/lastrev-libraries"
+      - "/Users/max/dev/lastrev/lastrev-starter-v2"
+      - "/Users/max/dev/theanswer"
+      
+    solo_ecosystem:
+      - "/Users/max/dev/experiments/solo/solo-server"
+      - "/Users/max/dev/experiments/solo/solo-claude"
+      - "/Users/max/dev/experiments/solo"
+      
+    experiments:
+      - "/Users/max/dev/experiments/teclas-uy"
+      - "/Users/max/dev/examples/all-things-monorepo"
+      - "/Users/max/dev/examples/my-micro-saas"
+      - "/Users/max/dev/forks/SuperClaude"
+
+# Template variables for delegation commands
+Delegation_Templates:
+  # Standard @solo comment template
+  solo_comment: |
+    @solo [Task description] in repo [FULL_REPO_PATH]. Create a git worktree at ~/dev/_work-trees/[repo-name]-[ticket-id] for clean isolation. [Detailed implementation steps]. When complete, commit changes and create a PR targeting [branch] with title "[type]: [description]" and link it to ticket [TICKET-ID]. Stop after [checkpoint] for human review.
+  
+  # Worktree setup commands
+  worktree_setup: |
+    REPO_NAME=$(basename [FULL_REPO_PATH])
+    TICKET_ID="[TICKET-ID]"
+    WORKTREE_PATH="$HOME/dev/_work-trees/${REPO_NAME}-${TICKET_ID}"
+    git worktree add "$WORKTREE_PATH" -b "feature/${TICKET_ID}"
+    cd "$WORKTREE_PATH"
+  
+  # Common delegation examples by repository type
+  examples:
+    technical_implementation: |
+      @solo Implement security improvements in repo /Users/max/dev/experiments/solo/solo-server. Create worktree at ~/dev/_work-trees/solo-server-MAX-123. Tasks: 1) Create .env.example with placeholders, 2) Add to .gitignore, 3) Create validation script. Create PR "feat: add security configuration" linked to MAX-123. Stop after implementation for review.
+    
+    data_analysis: |
+      @solo Analyze usage patterns in repo /Users/max/dev/experiments/upwork-analyzer. Create worktree at ~/dev/_work-trees/upwork-analyzer-MAX-456. Read all logs from data/logs/, calculate metrics, create report at docs/analysis.md with visualizations. Create PR "docs: usage analysis report" linked to MAX-456. Stop after report generation.
+    
+    feature_development: |
+      @solo Add dark mode toggle in repo /Users/max/dev/experiments/tennis-workout. Create worktree at ~/dev/_work-trees/tennis-workout-MAX-789. Implement theme switching in src/components/, update CSS variables, add toggle to header. Create PR "feat: add dark mode toggle" linked to MAX-789. Stop after implementation for review.
+
+# Verification metadata
+metadata:
+  last_verified: "2025-07-05"
+  total_repositories: 16
+  verification_method: "git status + remote check"
+  worktree_directory_status: "exists and empty"
+  configuration_version: "1.0"
+  notes: "All repositories verified as active git repositories with proper remotes"
