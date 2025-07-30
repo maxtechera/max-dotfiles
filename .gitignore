@@ -21,7 +21,7 @@ __pycache__/
 Thumbs.db
 
 # Dev directory (will be a private submodule)
-/dev/
+#/dev/
 
 # Claude sensitive files
 claude/.claude/.credentials.json
